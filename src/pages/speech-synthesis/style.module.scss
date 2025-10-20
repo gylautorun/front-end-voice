@@ -1,0 +1,11 @@
+
+.speech-synthesis {
+    display: flex;
+    align-items: center;
+
+    .voice {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+    }
+}

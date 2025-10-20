@@ -1,0 +1,159 @@
+
+.recorder-wrapper {
+    margin-top: 10px;
+    padding: 20px;
+    border: 1px solid #00b894;
+    .phone {
+        margin: 0 auto;
+        padding: 55px 11px 53px;
+        width: 221px;
+        height: 448px;
+        font-size: 12px;
+        border-radius: 35px;
+        background-image: url('https://xiaotianxia.github.io/blog/vuepress/assets/img/iphone-bg1.bf9c75ef.png');
+        box-sizing: border-box;
+        user-select: none;
+    }
+    .phone-body {
+        height: 100%;
+        background-color: #fff;
+        display: flex;
+        flex-direction: column;
+    }
+    .phone-header {
+        height: 30px;
+        line-height: 30px;
+        color: #fff;
+        font-weight: bold;
+        background-color: #000;
+        text-align: center;
+    }
+    
+    .phone-content {
+        flex: 1;
+        min-height: 0;
+        background-color: #f1eded;
+        margin: 0;
+        padding: 0;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        &::-webkit-scrollbar {
+            display: none;
+        }
+    }
+    .phone-operate {
+        position: relative;
+        line-height: 28px;
+        text-align: center;
+        cursor: pointer;
+        font-weight: bold;
+        box-shadow: 0 -1px 1px rgba(0, 0, 0, .1);
+        &:active {
+            background-color: #95a5a6;
+            &:before {
+                position: absolute;
+                left: 50%;
+                transform: translate(-50%, 0);
+                top: -2px;
+                content: '';
+                width: 0%;
+                height: 2px;
+                background-color: #7bed9f;
+                animation: loading 1s ease-in-out infinite backwards;
+            }
+        }
+    }
+    .msg {
+        padding: 0 8px;
+        margin: 10px 0;
+        overflow: hidden;
+        cursor: pointer;
+
+        &.eg {
+            cursor: default;
+            .audio {
+                text-align: left;
+            }
+        }
+
+        .avatar,
+        .audio,
+        .duration {
+            float: right;
+        }
+        .avatar {
+            width: 24px;
+            height: 24px;
+            line-height: 24px;
+            text-align: center;
+            background-color: #000;
+            background: url('../../../assets/hero.png') 0 0;
+            background-size: 100%;
+        }
+        .duration {
+            margin: 3px 2px;
+        }
+    }
+    .audio {
+        position: relative;
+        margin-right: 6px;
+        max-width: 116px;
+        min-width: 30px;
+        height: 24px;
+        line-height: 24px;
+        padding: 0 4px 0 10px;
+        border-radius: 2px;
+        color: #000;
+        text-align: right;
+        background-color: rgba(107, 197, 107, 0.85);
+        &:before {
+            position: absolute;
+            right: -8px;
+            top: 8px;
+            content: '';
+            display: inline-block;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 4px;
+            border-color: transparent transparent transparent rgba(107, 197, 107, 0.85);
+        }
+        span {
+            color: rgba(255, 255, 255, .8);
+            display: inline-block;
+            transform-origin: center;
+            &:nth-child(1) {
+                font-weight: 400;
+            }
+            &:nth-child(2) {
+                transform: scale(0.8);
+                font-weight: 500;
+            }
+            &:nth-child(3) {
+                transform: scale(0.5);
+                font-weight: 700
+            }
+        }
+
+        &.wink span {
+            animation: wink 1s ease infinite;
+        }
+    }
+    
+    @keyframes wink {
+        from {
+            color: rgba(255, 255, 255, .8);
+        }
+        to {
+            color: rgba(255, 255, 255, .1);
+        }
+    }
+    @keyframes loading {
+        from {
+            width: 0%;
+        }
+        to {
+            width: 100%;
+        }
+    }
+}

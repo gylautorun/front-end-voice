@@ -1,0 +1,17 @@
+
+
+.ant-menu .ant-menu-item-group .ant-menu-item-group-title {
+    padding: 0;
+}
+.menu-label {
+    padding: 8px 16px;
+    .link {
+        color: #333;
+    }
+    &.active {
+        background-color: #e6f4ff;
+        .link {
+            color: #1677ff;
+        }
+    }
+}

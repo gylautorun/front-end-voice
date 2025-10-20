@@ -1,0 +1,2 @@
+[前端AI语音方面的实现](https://juejin.cn/post/6975683038940233764)
+[github 实现](https://github.com/TalAter/annyang/blob/master/src/annyang.js)

@@ -1,0 +1,38 @@
+
+.infinite-scroll {
+    & > div {
+        margin-bottom: 50px;
+        height: 200px;
+        color: #fff;
+        line-height: 200px;
+        text-align: center;
+    }
+    .even {
+        background-color: pink;
+    }
+    .odd {
+        background-color: skyblue;
+    }
+
+    [data-info="come-in"] {
+        opacity: 1;
+        transform: translateY(150px);
+        animation: come-in 1s ease forwards;
+        &:nth-child(odd) {
+            animation-duration: 1s;
+        }
+    }
+    .already-visible {
+        opacity: 1;
+        transform: translateY(0);
+        animation: none;
+    }
+    [data-info="opaque"] {
+        opacity: 0;
+    }
+    @keyframes come-in {
+        100% {
+            transform: translateY(0);
+        }
+    }
+}

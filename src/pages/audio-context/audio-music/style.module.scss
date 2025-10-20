@@ -1,0 +1,16 @@
+
+.audio-music {
+    .analyser {
+        padding-bottom: 30px;
+
+        .canvas {
+            width: 800px;
+            height: 200px;
+            background-color: #2c3e50;
+        }
+    }
+    .audio {
+        width: 300px;
+        height: 54px;
+    }
+}

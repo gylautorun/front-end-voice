@@ -1,0 +1,44 @@
+
+
+* {
+    box-sizing: border-box;
+}
+.app-page {
+    height: 100%;
+
+    .header {
+
+    }
+    .footer {
+        &:empty {
+            display: none;
+        }
+    }
+    
+    .main {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+
+    .main-content {
+        padding: 20px;
+        overflow-y: auto;
+    }
+
+    .app-content {
+        width: 100%;
+        height: 100%;
+    }
+    .ant-menu.ant-menu-root.ant-menu-inline {
+        transform: translateX(-24px);
+    }
+
+    .ant-layout-sider.ant-layout-sider-light.sidebar {
+        .ant-layout-sider-children {
+            overflow-x: hidden;
+            overflow-y: auto;
+            height: 100%;
+        }
+    }
+}

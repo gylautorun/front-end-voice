@@ -1,3 +1,4 @@
+import {useCallback} from 'react';
 import {Button, Form, Select, Slider} from 'antd';
 import {useAudio} from './use-audio';
 import style from './style.module.scss';
@@ -9,7 +10,9 @@ export type FieldType = {
   frequency: number;
 };
 export function AudioSound() {
-  const {start, stop, started} = useAudio();
+  const {start, stop, update, started} = useAudio();
+  const [form] = Form.useForm<FieldType>();
+  
   const onFinish = (values: FieldType) => {
     if (started) {
       stop(values);
@@ -18,9 +21,18 @@ export function AudioSound() {
       start(values);
     }
   };
+  
+  const onValuesChange = useCallback((changedValues: Partial<FieldType>, allValues: FieldType) => {
+    // console.log(changedValues, allValues);
+    if (started) {
+      update(allValues);
+    }
+  }, [started, update]);
+  
   return (
     <div className={style.audioSound}>
       <Form
+        form={form}
         name="synthesis"
         labelCol={{span: 4}}
         wrapperCol={{span: 16}}
@@ -31,6 +43,7 @@ export function AudioSound() {
           frequency: 196,
         }}
         onFinish={onFinish}
+        onValuesChange={onValuesChange}
         autoComplete="off"
         style={{minWidth: '100%'}}
       >
@@ -63,9 +76,6 @@ export function AudioSound() {
           name="type"
         >
           <Select
-            onChange={(value) => {
-              // setLang(value);
-            }}
             options={['sine', 'square', 'sawtooth', 'triangle'].map(item => ({
               value: item,
               label: item,

@@ -60,5 +60,15 @@ export function useAudio() {
         oscillatorNode.stop(audioInstance.currentTime + FADING_TIME);
         setStarted(false);
     }, [audioContext]);
-    return {start, stop, started};
+    
+    const update = useCallback((values: FieldType) => {
+        if (!started || !ref.current) return;
+        const {oscillatorNode, gainNode} = ref.current;
+        // 直接更新参数
+        gainNode.gain.value = values.gain;
+        oscillatorNode.type = values.type;
+        oscillatorNode.frequency.value = values.frequency;
+    }, [started]);
+    
+    return {start, stop, update, started};
 }

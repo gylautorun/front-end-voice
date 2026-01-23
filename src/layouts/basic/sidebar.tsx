@@ -8,7 +8,7 @@ export interface RouteItem extends RouteProps {
     key: string;
     path: string;
     url?: string;
-    component?: React.ComponentType | React.LazyExoticComponent<React.ComponentType<any>>;
+    component?: React.ComponentType | React.LazyExoticComponent<React.ComponentType<unknown>>;
 }
 interface SideMenuProps extends RouteComponentProps {
     className?: string;
@@ -16,13 +16,14 @@ interface SideMenuProps extends RouteComponentProps {
 }type MenuItem = Required<MenuProps>['items'][number];
 export const Sidebar = withRouter((props: SideMenuProps) => {
     const {menu, selectedIds} = useMenu(props);
-    const collapsed = true;
+    const collapsed = false;
     const menuList = useMemo(() => {
         const handleMenu = (list: MenuItemObject[]): MenuItem[] => {
             return list.map(item => {
                 const children = item.children || [];
                 return {
                     key: item.id,
+                    // label: item.label,
                     label: (
                         <MenuLabel
                             ids={selectedIds}
@@ -41,7 +42,7 @@ export const Sidebar = withRouter((props: SideMenuProps) => {
             items={menuList}
             mode="inline"
             theme={'light'}
-            style={{width: 225}}
+            style={{ height: '100%', borderInlineEnd: 0, width: 225 }}
             inlineCollapsed={collapsed}
             selectedKeys={selectedIds}
         />

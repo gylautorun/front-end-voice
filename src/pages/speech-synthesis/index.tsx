@@ -1,4 +1,4 @@
-import {useState, useEffect, useRef, useMemo, useCallback} from 'react'
+import {useState, useMemo} from 'react';
 import {Button, Form, Input, Select, Slider} from 'antd';
 import {useSpeechSynthesis} from './use-speech-synthesis';
 import style from './style.module.scss';
@@ -12,7 +12,10 @@ export type FieldType = {
 };
 export function SpeechSynthesis() {
   const {speak, stop, reading, langList} = useSpeechSynthesis();
-  const [lang, setLang] = useState(langList[0].name);
+  console.log(langList);
+  const [lang, setLang] = useState(() => {
+    return langList[0]?.name || '';
+  });
   const langOption = useMemo(() => {
     return langList.find(item => item.name === lang);
   }, [lang, langList]);

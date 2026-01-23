@@ -1,5 +1,6 @@
 import React from 'react';
 import {Layout} from 'antd';
+import cx from 'classnames';
 import './style.scss';
 import { BasicLayoutContext } from './context';
 
@@ -24,7 +25,7 @@ export const LayoutPage = (props: LayoutPageProps) => {
     const scrollRef = React.useRef<HTMLDivElement>(null);
 
     return (
-        <Layout className={`layout-page ${className}`} >
+        <Layout className={cx('layout-page', className)} >
             <Header className={'header'}>
                 {renderHeader?.()}
             </Header>
@@ -33,7 +34,7 @@ export const LayoutPage = (props: LayoutPageProps) => {
                     {renderBreadcrumb?.()}
                 </div>
                 <Layout>
-                    <Sider className={'sidebar'} theme={'light'}>
+                    <Sider width={225} className={'sidebar'} theme={'light'}>
                         {renderSidebar?.()}
                     </Sider>
                     <BasicLayoutContext.Provider value={{scrollRef}}>

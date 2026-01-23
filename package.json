@@ -10,7 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "antd": "^5.17.0",
+    "@ant-design/icons": "^6.1.0",
+    "antd": "^6.2.1",
     "classnames": "^2.5.1",
     "lodash-es": "^4.17.21",
     "mobx": "^6.12.3",

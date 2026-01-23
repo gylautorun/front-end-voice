@@ -1,4 +1,4 @@
-import {useRef, useState, useMemo, useCallback} from 'react';
+import {useState, useMemo, useCallback} from 'react';
 import { FieldType } from '.';
 
 export function useSpeechSynthesis() {
@@ -14,11 +14,11 @@ export function useSpeechSynthesis() {
     const speak = useCallback((params: FieldType) => {
         const speech = new SpeechSynthesisUtterance();
         Object.keys(params).forEach((key) => {
-            (speech as any)[key] = params[key as keyof FieldType];
+            (speech as unknown as Record<string, unknown> & FieldType)[key] = params[key as keyof FieldType];
         });
         synthesis.speak(speech);
 
-        speech.onend = e => {
+        speech.onend = () => {
             setReading(false);
         };
         speech.onstart= () => {
@@ -30,7 +30,6 @@ export function useSpeechSynthesis() {
         synthesis.cancel();
         setReading(false);
     }, [synthesis]);
-
     return {synthesis, reading, langList, speak, stop};
 }
 

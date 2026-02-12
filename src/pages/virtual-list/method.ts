@@ -1,5 +1,6 @@
 export interface IListItem {
     id: number;
+    index: number;
     title: string;
     value: string;
 }
@@ -13,7 +14,11 @@ export interface IPosition {
 
 import { createPromise } from '@/utils/util-create-promise';
 
-export const GENERATE_LIST_NUM = 3 * 10 * 1000;
+/**
+ * dom 区域最大高度 33.5544 * 10000 * 100 = 33554440000px
+ * - 超过就显示不了了
+ */
+export const GENERATE_LIST_NUM = 33.5544 * 10000;
 
 // 使用 Vite 5 推荐的方式创建 Worker
 export const generateList = async (num = GENERATE_LIST_NUM, repeatNum = 50, itemHeight = 150): Promise<{ data: IListItem[], positions: IPosition[] }> => {

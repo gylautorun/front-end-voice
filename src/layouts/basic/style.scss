@@ -28,7 +28,8 @@
 
     .app-content {
         width: 100%;
-        // height: 100%;
+        // 不能删除，删除会影响内部元素的布局计算 （虚拟列表等）
+        height: 100%;
     }
 
     .sidebar {

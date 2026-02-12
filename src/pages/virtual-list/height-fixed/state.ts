@@ -18,8 +18,8 @@ class State {
         this.reaction();
     }
     list: IListItem[] = [];
-    // positions: IPosition[] = [];
-    itemHeight = 150; // 高度
+    positions: IPosition[] = [];
+    itemHeight = 100; // 高度
     screenHeight = 0;
     start = 0;
     loading = true;
@@ -28,11 +28,9 @@ class State {
 
     async created() {
         try {
-            console.time('created');
             const { data, positions } = await generateList(GENERATE_LIST_NUM, 50, this.itemHeight);
             this.list = data;
-            console.timeEnd('created');
-            // this.positions = positions;
+            this.positions = positions;
         } catch (error) {
             console.error('Failed to generate list:', error);
         } finally {
@@ -46,7 +44,8 @@ class State {
         return this.total * this.itemHeight;
     }
     get visibleCount() {
-        return Math.ceil(this.screenHeight / this.itemHeight);
+        // 确保即使 screenHeight 为 0 时也能返回一个合理的值，避免渲染全部数据
+        return Math.max(1, Math.ceil(this.screenHeight / this.itemHeight));
     }
     /**
      * 可视区域 上下各 在显示个数
@@ -66,6 +65,17 @@ class State {
         return Math.min(this.total - this.end, this.bufferCount);
     }
     get visibleData() {
+        // console.log('visibleData', {
+        //     start: this.start,
+        //     end: this.end,
+        //     visibleCount: this.visibleCount,
+        //     aboveCount: this.aboveCount,
+        //     belowCount: this.belowCount,
+        //     total: this.total,
+        //     screenHeight: this.screenHeight,
+        //     itemHeight: this.itemHeight,
+        //     listHeight: this.listHeight,
+        // });
         return this.list.slice(
             this.start - this.aboveCount,
             this.end + this.belowCount

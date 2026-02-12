@@ -5,13 +5,22 @@ import {store} from './state';
 import style from './style.module.scss';
 import {debounce} from 'lodash-es';
 
+interface IListItemProps {
+  id: number;
+  title: string;
+  value: string;
+  itemHeight: number;
+  top: number;
+  bottom?: number;
+  height?: number;
+}
 // 列表项组件，使用 memo 避免不必要的重新渲染
-const ListItem = memo(({ id, title, value, itemHeight }: { id: number, title: string, value: string, itemHeight: number }) => {
+const ListItem = memo(({ id, title, value, top, bottom, height }: IListItemProps) => {
   return (
     <div
       className={style.contentItem}
       key={id}
-      style={{height: itemHeight, top: (id - 1) * itemHeight}}
+      style={{height, top}}
       data-id={id}
     >
       <div className={style.contentInner}>
@@ -26,7 +35,7 @@ ListItem.displayName = 'ListItem';
 
 export const VirtualList = observer(() => {
   const ref = useRef<HTMLDivElement | null>(null);
-  const {visibleData, listHeight, itemHeight, loading} = store;
+  const {visibleData, positions, listHeight, itemHeight, loading} = store;
   // debounce 防抖时间 20 会有白屏, 50 比较明显
   const handleScroll = useCallback(debounce(() => {
     store.scrollEvent(ref.current);
@@ -62,18 +71,25 @@ export const VirtualList = observer(() => {
       </div>
     );
   }
+  
   return (
     <div className={style.virtualListFixed} ref={ref} onScroll={handleScroll}>
-      <div className={style.content} style={{height: listHeight}}>
-        {visibleData.map(({id, value, title}) => (
-          <ListItem
-            key={id}
-            id={id}
-            title={title}
-            value={value}
-            itemHeight={itemHeight}
-          />
-        ))}
+      <div className={style.content} style={{height: listHeight}}> 
+        {visibleData.map(({id, value, title, index}) => {
+          const position = positions[index];
+          return (
+            <ListItem
+              key={id}
+              id={id}
+              title={title}
+              value={value}
+              itemHeight={itemHeight}
+              top={position.top}
+              bottom={position.bottom}
+              height={position.height}
+            />
+          );
+        })}
       </div>
     </div>
   );

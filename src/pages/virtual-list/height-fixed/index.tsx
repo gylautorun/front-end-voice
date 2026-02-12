@@ -1,7 +1,7 @@
 import {useCallback, memo, useLayoutEffect, useRef} from 'react';
 import {runInAction} from 'mobx';
 import {observer, Observer} from 'mobx-react';
-import {store, Item} from './state';
+import {store} from './state';
 import style from './style.module.scss';
 import {debounce} from 'lodash-es';
 

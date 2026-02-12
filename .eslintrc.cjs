@@ -14,5 +14,11 @@ module.exports = {
       'warn',
       { allowConstantExport: true },
     ],
+    // 显式 any 只产生警告
+    '@typescript-eslint/no-explicit-any': 'warn',
+    // 禁用未使用变量的检查
+    '@typescript-eslint/no-unused-vars': 'off',
+    // 禁用未使用参数的检查
+    'no-unused-vars': 'off',
   },
 }

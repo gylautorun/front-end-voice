@@ -43,7 +43,7 @@ class State {
                 height: this.itemHeight,
             };
         });
-    };
+    }
     get total() {
         return this.list.length;
     }
@@ -52,13 +52,13 @@ class State {
     }
     get visibleCount() {
         return Math.ceil(this.screenHeight / this.itemHeight);
-    };
+    }
     /**
      * 可视区域 上下各 在显示个数
      */
     get bufferCount() {
         return Math.floor(this.visibleCount * this.bufferPercent); // 向下取整
-    };
+    }
     /**
      * 下面 使用索引和缓冲数量的最小值 避免缓冲不存在或者过多的数据
      * aboveCount 向上缓冲
@@ -66,16 +66,16 @@ class State {
      */
     get aboveCount() {
         return Math.min(this.start, this.bufferCount);
-    };
+    }
     get belowCount() {
         return Math.min(this.total - this.end, this.bufferCount);
-    };
+    }
     get visibleData() {
         return this.list.slice(
             this.start - this.aboveCount,
             this.end + this.belowCount
         );
-    };
+    }
     get end(): number {
         return Math.min(this.start + this.visibleCount, this.total - 1);
     }
@@ -90,7 +90,7 @@ class State {
         if (start !== currIndex) {
             this.start = currIndex;
         }
-    };
+    }
 
     reaction() {
         // this.reactions.reaction(

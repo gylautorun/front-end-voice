@@ -11,7 +11,10 @@ export default defineConfig({
     workerLoader(),
   ],
   server: {
-    hmr: true, // 启用热模块替换
+    // 启用热模块替换
+    hmr: true,
+    // 监听所有网络接口
+    host: true,
   },
   css: {
     // 对css的行为进行配置

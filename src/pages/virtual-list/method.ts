@@ -6,9 +6,9 @@ export interface IListItem {
     title: string;
     value: string;
 }
-export const GENERATE_LIST_NUM = 100 * 1000;
-export const generateList = (num = GENERATE_LIST_NUM, repeatNum = 50) => {
-    const data = [];
+export const GENERATE_LIST_NUM = 1 * 10 * 1000;
+export const generateList = (num = GENERATE_LIST_NUM, repeatNum = 50): IListItem[] => {
+    const data: IListItem[] = [];
     const value = Math.random().toString(36).substring(2, 15);
     for (let i = 1; i <= num; i++) {
         data.push({

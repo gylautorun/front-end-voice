@@ -1,13 +1,6 @@
-import {computed, observable, action, makeAutoObservable} from 'mobx';
+import {computed, makeAutoObservable} from 'mobx';
 import {ReactionManager} from '../../../utils/mobx/reaction-manager';
-import {generateList, IListItem} from '../method';
-
-interface IPosition {
-    index: number;
-    top: number;
-    bottom: number;
-    height: number;
-}
+import {generateList, IListItem, IPosition, GENERATE_LIST_NUM} from '../method';
 class State {
     reactions = new ReactionManager();
     constructor() {
@@ -25,24 +18,26 @@ class State {
         this.reaction();
     }
     list: IListItem[] = [];
-    positions: IPosition[] = [];
+    // positions: IPosition[] = [];
     itemHeight = 150; // 高度
     screenHeight = 0;
     start = 0;
+    loading = true;
     // 即每个缓冲区只缓冲 1 * 最大可见列表项数 个元素
     bufferPercent = 1;
 
-    created() {
-        const data = generateList();
-        this.list = data;
-        this.positions = data.map((_, index) => {
-            return  {
-                index,
-                top: index * this.itemHeight,
-                bottom: (index + 1) * this.itemHeight,
-                height: this.itemHeight,
-            };
-        });
+    async created() {
+        try {
+            console.time('created');
+            const { data, positions } = await generateList(GENERATE_LIST_NUM, 50, this.itemHeight);
+            this.list = data;
+            console.timeEnd('created');
+            // this.positions = positions;
+        } catch (error) {
+            console.error('Failed to generate list:', error);
+        } finally {
+            this.loading = false;
+        }
     }
     get total() {
         return this.list.length;

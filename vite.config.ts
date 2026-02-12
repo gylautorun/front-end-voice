@@ -1,6 +1,6 @@
 import {defineConfig} from 'vite';
 import react from '@vitejs/plugin-react';
-import workerLoader from 'worker-loader';
+// import workerLoader from 'worker-loader';
 import path from 'path';
 
 
@@ -8,7 +8,6 @@ import path from 'path';
 export default defineConfig({
   plugins: [
     react(),
-    workerLoader(),
   ],
   server: {
     // 启用热模块替换

@@ -1,5 +1,5 @@
 import React from 'react';
-import {HashRouter, Redirect, Route, Switch as RouteSwitch} from 'react-router-dom';
+import {BrowserRouter, Redirect, Route, Switch as RouteSwitch} from 'react-router-dom';
 import {ConfigProvider} from 'antd';
 
 import {LayoutPage} from './layout';
@@ -57,9 +57,8 @@ export const BasicLayout = (props: BasicLayoutProps) => {
     const renderFooter = () => {
         return null;
     };
-
     return (
-        <HashRouter>
+        <BrowserRouter basename={import.meta.env.DEV ? '/' : '/prod'}>
             <ConfigProvider locale={{locale}}>
                 <LayoutPage
                     className={'app-page'}
@@ -70,7 +69,7 @@ export const BasicLayout = (props: BasicLayoutProps) => {
                     renderFooter={renderFooter}
                 />
             </ConfigProvider>
-        </HashRouter>
+        </BrowserRouter>
     );
 };
 

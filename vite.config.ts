@@ -15,6 +15,17 @@ export default defineConfig({
     hmr: true,
     // 监听所有网络接口
     host: true,
+    // 在开发服务器中处理历史模式路由
+    // 当请求的路径不存在时，返回 index.html
+    proxy: {
+      // 这里可以添加代理配置
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
+    },
   },
   css: {
     // 对css的行为进行配置

@@ -62,7 +62,7 @@ export const useMenu = (routeProps: RouteComponentProps): MenuResult => {
             id,
             children: _children && _children.length ? _children : undefined,
             label: (typeof label === 'function' ? label(routeProps) : label) as ReactNode,
-            href: path ? `/#${path}` : undefined,
+            href: path ? path : undefined,
         };
 
         return sideNavProps;

@@ -204,31 +204,33 @@ class State {
         const processBatch = () => {
             const endIndex = Math.min(currentIndex + batchSize, nodes.length);
             
-            for (let i = currentIndex; i < endIndex; i++) {
-                const node = nodes[i];
-                if (!node) continue;
-                
-                const {height} = node.getBoundingClientRect();
-                const index = Number(node.dataset.id || -1) - 1;
-                
-                if (index < 0 || index >= this.positions.length || processedIndices.has(index)) {
-                    continue;
-                }
-                
-                processedIndices.add(index);
-                const oldHeight = this.positions[index].height;
-                const dValue = oldHeight - height;
-                
-                if (dValue) {
-                    this.positions[index].bottom -= dValue;
-                    this.positions[index].height = height;
+            runInAction(() => {
+                for (let i = currentIndex; i < endIndex; i++) {
+                    const node = nodes[i];
+                    if (!node) continue;
                     
-                    for (let k = index + 1; k < this.positions.length; k++) {
-                        this.positions[k].top = this.positions[k - 1].bottom;
-                        this.positions[k].bottom -= dValue;
+                    const {height} = node.getBoundingClientRect();
+                    const index = Number(node.dataset.id || -1) - 1;
+                    
+                    if (index < 0 || index >= this.positions.length || processedIndices.has(index)) {
+                        continue;
+                    }
+                    
+                    processedIndices.add(index);
+                    const oldHeight = this.positions[index].height;
+                    const dValue = oldHeight - height;
+                    
+                    if (dValue) {
+                        this.positions[index].bottom -= dValue;
+                        this.positions[index].height = height;
+                        
+                        for (let k = index + 1; k < this.positions.length; k++) {
+                            this.positions[k].top = this.positions[k - 1].bottom;
+                            this.positions[k].bottom -= dValue;
+                        }
                     }
                 }
-            }
+            });
             
             currentIndex = endIndex;
             

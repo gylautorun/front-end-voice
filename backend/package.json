@@ -1,0 +1,17 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "description": "backend server for the demo",
+  "type": "commonjs",
+  "main": "server.js",
+  "scripts": {
+    "start:websocket": "node websocket/server.js",
+    "dev:websocket": "nodemon websocket/server.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.7"
+  }
+}

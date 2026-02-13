@@ -8,7 +8,7 @@ import style from './index.module.scss';
 
 // 基本使用示例
 function BasicWebSocket() {
-  const { socket, send, isConnected, connect, disconnect, readyState } = useWebSocket('ws://echo.websocket.org');
+  const { socket, send, isConnected, connect, disconnect, readyState } = useWebSocket('ws://localhost:8080');
 
   const handleSendMessage = () => {
     send('Hello WebSocket!');
@@ -55,7 +55,7 @@ function ConfiguredWebSocket() {
   const [message, setMessage] = useState('');
   const [receivedMessage, setReceivedMessage] = useState('');
   
-  const { send, isConnected, readyState } = useWebSocket('ws://echo.websocket.org', {
+  const { send, isConnected, readyState } = useWebSocket('ws://localhost:8080', {
     format: 'json',
     reconnection: true,
     reconnectionAttempts: 5,
@@ -160,10 +160,12 @@ function ContextChildComponent() {
 // Context 使用示例 - 父组件
 function ContextWebSocket() {
   return (
-    <WebSocketProvider url="ws://echo.websocket.org" options={{
-      format: 'json',
-      reconnection: true
-    }}>
+    <WebSocketProvider
+      url="ws://localhost:8080"
+      options={{
+        format: 'json',
+        reconnection: true
+      }}>
       <div className={style.section}>
         <h3>使用 Context 的 WebSocket 连接</h3>
         <ContextChildComponent />
@@ -178,7 +180,7 @@ function ChatRoom() {
   const [messages, setMessages] = useState<string[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   
-  const { send, isConnected, readyState } = useWebSocket('ws://echo.websocket.org', {
+  const { send, isConnected, readyState } = useWebSocket('ws://localhost:8080', {
     format: 'json',
     onMessage: (event) => {
       try {
@@ -247,7 +249,7 @@ function ChatRoom() {
 
 // 手动连接示例
 function ManualWebSocket() {
-  const [url, setUrl] = useState('ws://echo.websocket.org');
+  const [url, setUrl] = useState('ws://localhost:8080');
   const { connect, disconnect, isConnected, send } = useWebSocket('', {
     connectManually: true,
     format: 'json'

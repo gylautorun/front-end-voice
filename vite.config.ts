@@ -101,6 +101,8 @@ export default defineConfig({
   },
   define: {
     __INTLIFY_PROD_DEVTOOLS__: false,
-    'process.env': process.env,
+    'process.env': {
+      NODE_ENV: JSON.stringify(process.env.NODE_ENV || 'development'),
+    },
   },
 });

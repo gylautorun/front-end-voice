@@ -155,46 +155,98 @@ class State {
         if (!target) {
             return;
         }
+        console.log(11111111111)
         const {scrollTop} = target;
+        console.time('scrollEvent');
         this.start = this.getStartIndex(scrollTop);
         this.updatePositions();
+        console.timeEnd('scrollEvent');
     }
     
     // 渲染后更新positions
     updatePositions() {
+        console.time('updatePositions');
         const nodes = Array.from(this.refMap.values());
-        for (const node of nodes) {
-            if (!node) {
-                continue;
-            }
-            // 获取 真实DOM高度
-            const {height} = node.getBoundingClientRect();
-            // 根据 元素索引 获取 缓存列表对应的列表项
-            const index = Number(node.dataset.id || -1) - 1;
+        // for (const node of nodes) {
+        //     if (!node) {
+        //         continue;
+        //     }
+        //     // 获取 真实DOM高度
+        //     const {height} = node.getBoundingClientRect();
+        //     // 根据 元素索引 获取 缓存列表对应的列表项
+        //     const index = Number(node.dataset.id || -1) - 1;
             
-            if (index < 0 || index >= this.positions.length) {
-                continue;
-            }
+        //     if (index < 0 || index >= this.positions.length) {
+        //         continue;
+        //     }
             
-            const oldHeight = this.positions[index].height;
-            // dValue：真实高度与预估高度的差值 决定该列表项是否要更新
-            const dValue = oldHeight - height;
-            // 如果有高度差 !!dValue === true
-            if(dValue) {
-                // 更新对应列表项的 bottom 和 height
-                this.positions[index].bottom = this.positions[index].bottom - dValue;
-                this.positions[index].height = height;
-                // 依次更新positions中后续元素的 top bottom
-                for(let k = index + 1; k < this.positions.length; k++) {
-                    this.positions[k].top = this.positions[k - 1].bottom;
-                    this.positions[k].bottom = this.positions[k].bottom - dValue;
+        //     const oldHeight = this.positions[index].height;
+        //     // dValue：真实高度与预估高度的差值 决定该列表项是否要更新
+        //     const dValue = oldHeight - height;
+        //     // 如果有高度差 !!dValue === true
+        //     if(dValue) {
+        //         // 更新对应列表项的 bottom 和 height
+        //         this.positions[index].bottom = this.positions[index].bottom - dValue;
+        //         this.positions[index].height = height;
+        //         // 依次更新positions中后续元素的 top bottom
+        //         for(let k = index + 1; k < this.positions.length; k++) {
+        //             this.positions[k].top = this.positions[k - 1].bottom;
+        //             this.positions[k].bottom = this.positions[k].bottom - dValue;
+        //         }
+        //     }
+        // }
+        // 2500ms
+
+        const processedIndices = new Set<number>();
+        const batchSize = 10;
+        let currentIndex = 0;
+        
+        const processBatch = () => {
+            const endIndex = Math.min(currentIndex + batchSize, nodes.length);
+            
+            for (let i = currentIndex; i < endIndex; i++) {
+                const node = nodes[i];
+                if (!node) continue;
+                
+                const {height} = node.getBoundingClientRect();
+                const index = Number(node.dataset.id || -1) - 1;
+                
+                if (index < 0 || index >= this.positions.length || processedIndices.has(index)) {
+                    continue;
+                }
+                
+                processedIndices.add(index);
+                const oldHeight = this.positions[index].height;
+                const dValue = oldHeight - height;
+                
+                if (dValue) {
+                    this.positions[index].bottom -= dValue;
+                    this.positions[index].height = height;
+                    
+                    for (let k = index + 1; k < this.positions.length; k++) {
+                        this.positions[k].top = this.positions[k - 1].bottom;
+                        this.positions[k].bottom -= dValue;
+                    }
                 }
             }
-        }
+            
+            currentIndex = endIndex;
+            
+            if (currentIndex < nodes.length) {
+                requestAnimationFrame(processBatch);
+            } else {
+                console.timeEnd('updatePositions');
+            }
+        };
+        
+        // 500ms
+        processBatch();
+        console.timeEnd('updatePositions');
     }
 
     getStartIndex(scrollTop = 0) {
-        return binarySearch(this.positions, scrollTop);
+        const idx = binarySearch(this.positions, scrollTop);
+        return idx;
     }
 
     reaction() {

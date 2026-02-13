@@ -30,7 +30,6 @@ const ListItem = memo(({ id, title, value, top, height }: IListItemProps) => {
     <div
       className={style.contentItem}
       key={id}
-      style={{top}}
       ref={handleItemRef}
       data-id={id}
     >
@@ -49,7 +48,7 @@ export const VirtualList = observer(() => {
   const handleScroll = useCallback(
     debounce(() => {
       store.scrollEvent(ref.current);
-    }, 16),
+    }, 20),
     []
   );
 

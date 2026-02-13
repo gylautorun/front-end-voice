@@ -155,7 +155,6 @@ class State {
         if (!target) {
             return;
         }
-        console.log(11111111111)
         const {scrollTop} = target;
         console.time('scrollEvent');
         this.start = this.getStartIndex(scrollTop);

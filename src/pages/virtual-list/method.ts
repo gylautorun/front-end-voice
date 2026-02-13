@@ -21,7 +21,7 @@ export const BROWSER_MAX_RENDERING_HEIGHT = 33554440000; // 33554440000px
  * dom 区域最大高度 33.5544 * 10000 * 100 = 33554440000px
  * - 超过就显示不了了
  */
-export const GENERATE_LIST_NUM = 1 * 10000;
+export const GENERATE_LIST_NUM = 5 * 10000;
 
 // 使用 Vite 5 推荐的方式创建 Worker
 export const generateList = async (num = GENERATE_LIST_NUM, repeatNum = 50, itemHeight = 150): Promise<{ data: IListItem[], positions: IPosition[] }> => {

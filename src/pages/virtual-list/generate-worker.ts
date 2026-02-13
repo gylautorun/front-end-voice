@@ -26,7 +26,8 @@ interface WorkerResponse {
 }
 
 function repeat(value: string, count: number): string {
-    return value.repeat(count);
+    const num = Math.ceil(Math.random() * count);
+    return value.repeat(num);
 }
 
 function generateList(num: number, repeatNum: number, startIndex = 0): IListItem[] {

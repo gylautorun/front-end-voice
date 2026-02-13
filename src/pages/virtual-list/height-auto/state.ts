@@ -1,44 +1,38 @@
 import {get} from 'lodash-es';
 import {computed, observable, action, makeAutoObservable, runInAction} from 'mobx';
 import {ReactionManager} from '../../../utils/mobx/reaction-manager';
-import {generateList, IListItem, GENERATE_LIST_NUM} from '../method';
+import {
+    generateList,
+    IListItem,
+    GENERATE_LIST_NUM,
+    getActualListHeight,
+} from '../method';
 
 const binarySearch = function(list: IPosition[], scrollTop: number): number {  
     const len = list.length;
+    if (len === 0) return 0;
+    
     let left = 0;
     let right = len - 1;
-    let tempIndex = -1;
+    let result = 0;
+    
     while (left <= right) {  
         const midIndex = Math.floor((left + right) / 2);
         const midVal = list[midIndex].bottom;
-        console.log('midVal', {
-            midIndex,
-            item: list[midIndex],
-            left,
-            right,
-            tempIndex
-        });
+        
         if (midVal === scrollTop) {
             return midIndex;
         }
         else if (midVal < scrollTop) {
             left = midIndex + 1;
+            result = midIndex + 1;
         }
         else {
-            // list不一定存在与target相等的项，不断收缩右区间，寻找最匹配的项
-            if(tempIndex === -1 || tempIndex > midIndex) {
-                tempIndex = midIndex;
-            }
-            right--;
+            right = midIndex - 1;
         }
     }
-    console.log('binarySearch', {
-        tempIndex: tempIndex,
-        scrollTop,
-        list,
-    });
-    // 如果没有搜索到完全匹配的项 就返回最匹配的项
-    return tempIndex;
+    
+    return Math.min(result, len - 1);
 };
 interface IPosition {
     index: number;
@@ -54,10 +48,11 @@ class State {
     screenHeight = 0;
     // currentOffset = 0;
     start = 0;
-    // /即每个缓冲区只缓冲 1 * 最大可见列表项数 个元素
+    // 即每个缓冲区只缓冲 1 * 最大可见列表项数 个元素
     bufferPercent = 1;
-    refs: Array<HTMLDivElement | null> = [];
+    refMap = new Map<number, HTMLDivElement>();
     loading = true;
+
     constructor() {
         makeAutoObservable(this, {
             listHeight: computed,
@@ -69,8 +64,13 @@ class State {
             length: computed,
             end: computed,
             currentOffset: computed,
+            loading: observable,
+            refMap: observable,
+            addRef: action,
+            updatePositions: action,
+            scrollEvent: action,
         });
-        this.initPositions(this.list, this.preItemSize);
+        this.created();
         this.reaction();
     }
     
@@ -79,27 +79,48 @@ class State {
             const { data, positions } = await generateList(GENERATE_LIST_NUM, 50, this.preItemSize);
             this.list = data;
             this.positions = positions;
-            this.initPositions(this.list, this.preItemSize);
         } catch (error) {
             console.error('Failed to generate list:', error);
         } finally {
             this.loading = false;
         }
     }
+
+    addRef(element: HTMLDivElement) {
+        const id = Number(element.dataset.id || -1);
+        if (!this.refMap.has(id)) {
+            this.refMap.set(id, element);
+        }
+    }
+
     get length() {
         return this.list.length;
     }
+
     get listHeight() {
-        return this.positions[this.positions.length - 1].bottom;
+        return getActualListHeight(this.positions);
     }
+
     get visibleCount() {
-        return Math.ceil(this.screenHeight / this.preItemSize);
+        // 确保即使 screenHeight 为 0 时也能返回一个合理的值，避免渲染全部数据
+        return Math.max(1, Math.ceil(this.screenHeight / this.preItemSize));
     }
+
     get visibleData() {
-        return this.list.slice(
-            this.start - this.aboveCount,
-            this.end + this.belowCount
-        );
+        const startIndex = Math.max(0, this.start - this.aboveCount);
+        const endIndex = Math.min(this.length, this.end + this.belowCount);
+        console.log('visibleData debug:', {
+            start: this.start,
+            end: this.end,
+            aboveCount: this.aboveCount,
+            belowCount: this.belowCount,
+            startIndex,
+            endIndex,
+            visibleCount: this.visibleCount,
+            screenHeight: this.screenHeight,
+            length: this.length
+        });
+        return this.list.slice(startIndex, endIndex);
     }
     /**
      * 可视区域 上下各 在显示个数
@@ -115,25 +136,20 @@ class State {
     get aboveCount() {
         return Math.min(this.start, this.bufferCount);
     }
+
     get belowCount() {
         return Math.min(this.length - this.end, this.bufferCount);
     }
+
     get end(): number {
         return Math.min(this.start + this.visibleCount, this.length - 1);
     }
+
     get currentOffset() {
-        if(this.start >= 1) {
-            // return this.positions[this.start].top;
-            // 计算偏移量时包括上缓冲区的列表项
-            const safetyStart = this.start - this.aboveCount;
-            const {top} = this.positions[safetyStart] || {top: 0};
-            const offset = this.positions[this.start].top - top;
-            return this.positions[this.start - 1].bottom - offset;
-        }
-        else {
-            return 0;
-        }
+        const startIndex = this.start - this.aboveCount;
+        return this.positions[startIndex]?.top || 0;
     }
+
     // 滚动回调
     scrollEvent(target: HTMLElement | null) {
         if (!target) {
@@ -142,43 +158,11 @@ class State {
         const {scrollTop} = target;
         this.start = this.getStartIndex(scrollTop);
         this.updatePositions();
-        // this.currentOffset = this.getCurrentOffset();
-        console.log('scrollEvent', {
-            start: this.start,
-            scrollTop,
-            end: this.end,
-            currentOffset: this.currentOffset,
-            positions: this.positions,
-        });
-        // Promise.resolve().then(() => {
-        //     runInAction(() => {
-        //         // // 根据真实元素大小，修改对应的缓存列表
-        //         this.updatePositions();
-        //         // 更新完缓存列表后，重新赋值偏移量
-        //         this.currentOffset = this.getCurrentOffset();
-        //         console.log('Promise', {
-        //             start: this.start,
-        //             end: this.end,
-        //             currentOffset: this.currentOffset,
-        //             positions: this.positions,
-        //         });
-        //     });
-        // });
     }
-    // 初始化列表
-    initPositions(list: IListItem[], itemSize: number) {
-        this.positions = list.map((item, index) => {
-            return  {
-                index,
-                top: index * itemSize,
-                bottom: (index + 1) * itemSize,
-                height: itemSize, 
-            };
-        });
-    }
+    
     // 渲染后更新positions
     updatePositions() {
-        const nodes = this.refs || [];
+        const nodes = Array.from(this.refMap.values());
         for (const node of nodes) {
             if (!node) {
                 continue;
@@ -186,7 +170,12 @@ class State {
             // 获取 真实DOM高度
             const {height} = node.getBoundingClientRect();
             // 根据 元素索引 获取 缓存列表对应的列表项
-            const index = Number(get(node, 'dataset.id', -1)) - 1;
+            const index = Number(node.dataset.id || -1) - 1;
+            
+            if (index < 0 || index >= this.positions.length) {
+                continue;
+            }
+            
             const oldHeight = this.positions[index].height;
             // dValue：真实高度与预估高度的差值 决定该列表项是否要更新
             const dValue = oldHeight - height;
@@ -203,22 +192,10 @@ class State {
             }
         }
     }
+
     getStartIndex(scrollTop = 0) {
         return binarySearch(this.positions, scrollTop);
     }
-    // getCurrentOffset() {
-    //     if(this.start >= 1) {
-    //         return this.positions[this.start].top;
-    //         // 计算偏移量时包括上缓冲区的列表项
-    //         const safetyStart = this.start - this.aboveCount;
-    //         const {top} = this.positions[safetyStart] || {top: 0};
-    //         const offset = this.positions[this.start].top - top;
-    //         return this.positions[this.start - 1].bottom - offset;
-    //     }
-    //     else {
-    //         return 0;
-    //     }
-    // };
 
     reaction() {
         // this.reactions.reaction(
@@ -227,6 +204,7 @@ class State {
 
     dispose() {
         this.reactions.dispose();
+        this.refMap.clear();
     }
 }
 

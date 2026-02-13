@@ -21,6 +21,8 @@ import {
     SITE_VIRTUAL_LIST_AUTO,
     SITE_VIRTUAL_LIST_FIXED,
 
+    SITE_MAP_WEBSOCKET_DEMO,
+
 } from './site-map';
 
 export const routes = [
@@ -39,6 +41,7 @@ export const routes = [
         path: SITE_MAP_SOCKET_GROUP.path,
         component: React.lazy(() => import('./pages/socket-group/index')),
     },
+    
     {
         key: SITE_MAP_MEDIA_DEVICE.key,
         path: SITE_MAP_MEDIA_DEVICE.path,
@@ -106,5 +109,11 @@ export const routes = [
         key: SITE_VIRTUAL_LIST_AUTO.key,
         path: SITE_VIRTUAL_LIST_AUTO.path,
         component: React.lazy(() => import('./pages/virtual-list/height-auto/index')),
+    },
+
+    {
+        key: SITE_MAP_WEBSOCKET_DEMO.key,
+        path: SITE_MAP_WEBSOCKET_DEMO.path,
+        component: React.lazy(() => import('./pages/websocket/websocket-demo/index')),
     },
 ];

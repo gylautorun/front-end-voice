@@ -6,6 +6,7 @@ export const SITE_MAP_SOCKET_GROUP = {
     path: '/socket-group',
     entry: ENTRY_MAIN,
 };
+
 export const SITE_MAP_SPEECH_RECOGNITION = {
     entry: ENTRY_MAIN,
     key: 'speech-recognition',
@@ -141,6 +142,24 @@ export const SITE_MAP_VIRTUAL_LIST = {
     ],
 };
 
+// WebSocket
+// WebSocket 示例
+export const SITE_MAP_WEBSOCKET_DEMO = {
+    entry: ENTRY_MAIN,
+    key: 'websocket-demo',
+    label: () => 'WebSocket 示例',
+    path: '/websocket/websocket-demo',
+};
+export const SITE_MAP_WEBSOCKET_LIST = {
+    entry: ENTRY_MAIN,
+    key: 'websocket',
+    label: () => 'WebSocket',
+    path: '/websocket',
+    children: [
+        SITE_MAP_WEBSOCKET_DEMO,
+    ],
+};
+
 export const SITE_MAP_MAIN = {
     label: () => '主菜单',
     entry: ENTRY_MAIN,
@@ -149,6 +168,7 @@ export const SITE_MAP_MAIN = {
         SITE_MAP_SPEECH_RECOGNITION,
         SITE_MAP_SPEECH_SYNTHESIS,
         SITE_MAP_SOCKET_GROUP,
+        SITE_MAP_WEBSOCKET_LIST,
         SITE_MAP_MEDIA_DEVICE,
         SITE_MAP_AUDIO_CONTEXT,
         SITE_MAP_IMG_VIDEO_PREVIEW,

@@ -1,3 +1,6 @@
+import { createPromise } from '@/utils/util-create-promise';
+
+
 export interface IListItem {
     id: number;
     index: number;
@@ -12,8 +15,8 @@ export interface IPosition {
     height: number;
 }
 
-import { createPromise } from '@/utils/util-create-promise';
-
+// 浏览器对 DOM 元素高度有限制，通常在33554440000px 左右
+export const BROWSER_MAX_RENDERING_HEIGHT = 33554440000; // 33554440000px
 /**
  * dom 区域最大高度 33.5544 * 10000 * 100 = 33554440000px
  * - 超过就显示不了了
@@ -56,4 +59,16 @@ export const generateList = async (num = GENERATE_LIST_NUM, repeatNum = 50, item
     }
     
     return promise;
+};
+
+// 获取实际的总高度，用于滚动计算
+export const getActualListHeight = (positions: IPosition[]): number => {
+    return positions[positions.length - 1]?.bottom || 0;
+};
+
+// 获取限制后的列表高度，避免超过浏览器限制
+export const getListHeight = (positions: IPosition[]): number => {
+    const MAX_HEIGHT = 10000000; // 1000万像素，约10公里
+    const calculatedHeight = positions[positions.length - 1]?.bottom || 0;
+    return Math.min(calculatedHeight, MAX_HEIGHT);
 };

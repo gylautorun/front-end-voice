@@ -1,4 +1,3 @@
-
 .virtual-list-auto {
     overflow: auto;
     position: relative;
@@ -6,6 +5,14 @@
     width: 360px;
     margin: 0 auto;
     border: 1px solid #999;
+    .loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        font-size: 16px;
+        color: #666;
+    }
     .content-item {
         padding: 10px 10px 0;
         color: #333;

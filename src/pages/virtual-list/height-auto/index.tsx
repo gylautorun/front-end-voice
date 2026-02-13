@@ -3,14 +3,15 @@ import {runInAction} from 'mobx';
 import {observer, Observer} from 'mobx-react';
 import {store} from './state';
 import style from './style.module.scss';
-import {debounce, throttle} from 'lodash-es';
+import {debounce} from 'lodash-es';
 
 export const VirtualList = observer(() => {
   const ref = useRef<HTMLDivElement | null>(null);
-  const {visibleData, listHeight, currentOffset, refs} = store;
+  const {visibleData, listHeight, currentOffset, refs, loading} = store;
   const handleScroll = useCallback(debounce(() => {
     store.scrollEvent(ref.current);
-  }, 50), []);
+  }, 16), []);
+  
   useLayoutEffect(() => {
     const target = ref.current;
     if (target) {
@@ -22,7 +23,15 @@ export const VirtualList = observer(() => {
       store.dispose();
     };
   }, [ref, store]);
-  // console.log(store, refs, 'store')
+
+  if (loading) {
+    return (
+      <div className={style.virtualListAuto}>
+        <div className={style.loading}>Loading...</div>
+      </div>
+    );
+  }
+
   return (
     <div className={style.virtualListAuto} ref={ref} onScroll={handleScroll}>
       <div className={style.phantom} style={{height: listHeight}}></div>

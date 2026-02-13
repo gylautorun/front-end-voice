@@ -109,17 +109,17 @@ class State {
     get visibleData() {
         const startIndex = Math.max(0, this.start - this.aboveCount);
         const endIndex = Math.min(this.length, this.end + this.belowCount);
-        console.log('visibleData debug:', {
-            start: this.start,
-            end: this.end,
-            aboveCount: this.aboveCount,
-            belowCount: this.belowCount,
-            startIndex,
-            endIndex,
-            visibleCount: this.visibleCount,
-            screenHeight: this.screenHeight,
-            length: this.length
-        });
+        // console.log('visibleData debug:', {
+        //     start: this.start,
+        //     end: this.end,
+        //     aboveCount: this.aboveCount,
+        //     belowCount: this.belowCount,
+        //     startIndex,
+        //     endIndex,
+        //     visibleCount: this.visibleCount,
+        //     screenHeight: this.screenHeight,
+        //     length: this.length
+        // });
         return this.list.slice(startIndex, endIndex);
     }
     /**

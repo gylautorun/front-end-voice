@@ -12,10 +12,12 @@ export type StoreHandler<T = any> = (
 
 // 插件调用者可以传的参数类型定义 | The parameter type definition that the plug-in caller can pass
 export type WebSocketOpts<T = any> = {
-  format: string;
+  format: 'json' | string;
   reconnection?: boolean;
   reconnectionAttempts?: number;
   reconnectionDelay?: number;
+  maxReconnectionDelay?: number;
+  reconnectionDelayGrowFactor?: number;
   connectManually?: boolean;
   passToStoreHandler?: StoreHandler;
   store?: T;

@@ -8,6 +8,8 @@ export default class Observer {
   public reconnection: boolean;
   private reconnectionAttempts: number;
   private reconnectionDelay: number;
+  private maxReconnectionDelay: number;
+  private reconnectionDelayGrowFactor: number;
   public reconnectTimeoutId: number | null = null;
   private reconnectionCount: number = 0;
   private passToStoreHandler: any;
@@ -26,8 +28,10 @@ export default class Observer {
     this.connectionUrl = connectionUrl;
     this.opts = opts;
     this.reconnection = this.opts.reconnection || false;
-    this.reconnectionAttempts = this.opts.reconnectionAttempts || Infinity;
+    this.reconnectionAttempts = this.opts.reconnectionAttempts || 5;
     this.reconnectionDelay = this.opts.reconnectionDelay || 1000;
+    this.maxReconnectionDelay = this.opts.maxReconnectionDelay || 30000;
+    this.reconnectionDelayGrowFactor = this.opts.reconnectionDelayGrowFactor || 1.5;
     this.passToStoreHandler = this.opts.passToStoreHandler;
     
     if (opts.store) {
@@ -70,6 +74,13 @@ export default class Observer {
         clearTimeout(this.reconnectTimeoutId);
       }
       
+      const delay = Math.min(
+        this.reconnectionDelay * Math.pow(this.reconnectionDelayGrowFactor, this.reconnectionCount - 1),
+        this.maxReconnectionDelay
+      );
+      
+      console.log(`WebSocket reconnecting in ${delay}ms (attempt ${this.reconnectionCount}/${this.reconnectionAttempts})`);
+      
       this.reconnectTimeoutId = setTimeout(() => {
         if (this.store) {
           this.passToStore('SOCKET_RECONNECT', this.reconnectionCount);
@@ -77,8 +88,9 @@ export default class Observer {
         
         this.connect(this.connectionUrl, this.opts);
         this.onEvent();
-      }, this.reconnectionDelay);
+      }, delay);
     } else {
+      console.error(`WebSocket reconnection failed after ${this.reconnectionAttempts} attempts`);
       if (this.store) {
         this.passToStore('SOCKET_RECONNECT_ERROR', true);
       }

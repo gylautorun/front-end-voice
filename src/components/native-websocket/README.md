@@ -14,11 +14,12 @@ src/components/native-websocket/
 ## 核心功能
 
 1. **自动连接管理** - 组件挂载时自动连接，卸载时自动断开
-2. **自动重连机制** - 连接断开后可配置自动重连
+2. **智能重连机制** - 连接断开后使用指数退避算法自动重连
 3. **JSON 格式支持** - 自动处理 JSON 序列化和反序列化
 4. **React Hook 风格** - 符合现代 React 开发习惯
 5. **上下文（Context）支持** - 方便在多个组件间共享连接
 6. **完整的事件处理** - 支持 onOpen、onClose、onError、onMessage 事件
+7. **详细的调试信息** - 重连过程中输出详细的调试日志
 
 ## 安装
 
@@ -65,8 +66,10 @@ function ConfiguredExample() {
   const { send, isConnected } = useWebSocket('ws://echo.websocket.org', {
     format: 'json',
     reconnection: true,
-    reconnectionAttempts: 5,
+    reconnectionAttempts: 10,
     reconnectionDelay: 2000,
+    maxReconnectionDelay: 60000,
+    reconnectionDelayGrowFactor: 2.0,
     onOpen: (event) => console.log('连接成功:', event),
     onClose: (event) => console.log('连接关闭:', event),
     onError: (event) => console.error('错误:', event),
@@ -133,8 +136,10 @@ function ManualExample() {
 |------|------|--------|------|
 | format | string | "" | 数据格式，支持 'json' |
 | reconnection | boolean | false | 是否自动重连 |
-| reconnectionAttempts | number | Infinity | 重连尝试次数 |
-| reconnectionDelay | number | 1000 | 重连延迟时间(ms) |
+| reconnectionAttempts | number | 5 | 重连尝试次数 |
+| reconnectionDelay | number | 1000 | 初始重连延迟时间(ms) |
+| maxReconnectionDelay | number | 30000 | 最大重连延迟时间(ms) |
+| reconnectionDelayGrowFactor | number | 1.5 | 重连延迟增长因子 |
 | connectManually | boolean | false | 是否手动连接 |
 | passToStoreHandler | function | - | 传递到存储的处理函数 |
 | store | any | - | 状态管理存储 |
@@ -251,21 +256,35 @@ export default function ChatRoom() {
 
 3. **重连机制**
    - 当 `reconnection: true` 时，连接断开后会自动重连
-   - 可配置重连尝试次数和延迟时间
+   - 使用指数退避算法，重连延迟会逐渐增加
+   - 可配置重连尝试次数、初始延迟、最大延迟和延迟增长因子
+   - 默认最多重连 5 次，初始延迟 1000ms，最大延迟 30000ms，增长因子 1.5
 
-4. **清理**
+4. **重连延迟计算**
+   - 计算公式：`delay = min(initialDelay * (growFactor ^ (attempt - 1)), maxDelay)`
+   - 示例（使用默认配置）：
+     | 重连次数 | 延迟时间 | 计算公式 |
+     |---------|---------|---------|
+     | 1       | 1000ms  | 1000 × 1.5⁰ |
+     | 2       | 1500ms  | 1000 × 1.5¹ |
+     | 3       | 2250ms  | 1000 × 1.5² |
+     | 4       | 3375ms  | 1000 × 1.5³ |
+     | 5       | 5063ms  | 1000 × 1.5⁴ |
+
+5. **清理**
    - 组件卸载时会自动断开连接
    - 手动调用 `disconnect` 也会清理所有资源
 
-5. **浏览器兼容性**
+6. **浏览器兼容性**
    - 支持所有现代浏览器
    - 不支持 IE11 及以下版本
 
-6. **错误处理**
+7. **错误处理**
    - 连接失败时会触发 onError 事件
    - 重连失败时会停止重连并触发相应事件
+   - 重连过程中会在控制台输出调试信息
 
-7. **性能优化**
+8. **性能优化**
    - 使用 React 的 useCallback 优化回调函数
    - 合理使用事件监听器，避免内存泄漏
 

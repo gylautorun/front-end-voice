@@ -22,6 +22,8 @@
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
     "noImplicitAny": false, // 允许隐式 any，只产生警告
+    /* 强制文件名大小写一致 */
+    "forceConsistentCasingInFileNames": false,
 
     /* Path Aliases */
     "baseUrl": ".",

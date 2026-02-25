@@ -150,6 +150,12 @@ export const SITE_MAP_WEBSOCKET_DEMO = {
     label: () => 'WebSocket 示例',
     path: '/websocket/websocket-demo',
 };
+export const SITE_MAP_WEBSOCKET_SHARED_CONNECTION_DEMO = {
+    entry: ENTRY_MAIN,
+    key: 'websocket-shared-connection-demo',
+    label: () => '共享连接示例',
+    path: '/websocket/shared-connection-demo',
+};
 export const SITE_MAP_WEBSOCKET_LIST = {
     entry: ENTRY_MAIN,
     key: 'websocket',
@@ -157,6 +163,7 @@ export const SITE_MAP_WEBSOCKET_LIST = {
     path: '/websocket',
     children: [
         SITE_MAP_WEBSOCKET_DEMO,
+        SITE_MAP_WEBSOCKET_SHARED_CONNECTION_DEMO,
     ],
 };
 

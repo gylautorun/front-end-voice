@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { Typography, Input, Button, Card, Space, List, Avatar, message } from 'antd';
 import { Link } from 'react-router-dom';
 import useSharedWebSocket from '../utils/useSharedWebSocket';
-import style from './Page2.module.scss';
+import NavigationCard from './navigation-card';
+import style from './page2.module.scss';
 
 const { Title, Paragraph, Text } = Typography;
 const { TextArea } = Input;
@@ -60,12 +61,14 @@ export default function Page2() {
 
   return (
     <div className={style.container}>
+      <NavigationCard currentPage="page2" />
+
       <Title level={1}>页面 2 - 消息发送测试</Title>
       
       <Card className={style.card}>
         <Title level={3}>发送消息</Title>
         <Paragraph>输入消息内容并发送，所有页面都会收到此消息：</Paragraph>
-        <Space direction="vertical" size={16} style={{ width: '100%' }}>
+        <Space vertical size={16} style={{ width: '100%' }}>
           <TextArea
             value={messageText}
             onChange={e => setMessageText(e.target.value)}
@@ -110,20 +113,7 @@ export default function Page2() {
         />
       </Card>
 
-      <Card className={style.card}>
-        <Title level={3}>其他演示页面</Title>
-        <Space direction="vertical" size={8}>
-          <Button type="link" component={Link} to="/websocket/shared-connection-demo/page1">
-            页面 1 - 基本演示
-          </Button>
-          <Button type="link" component={Link} to="/websocket/shared-connection-demo/page3">
-            页面 3 - 连接状态监控
-          </Button>
-          <Button type="link" component={Link} to="/websocket/shared-connection-demo">
-            返回演示首页
-          </Button>
-        </Space>
-      </Card>
+
     </div>
   );
 }

@@ -1,7 +1,8 @@
 import { Typography, Button, Card, Space } from 'antd';
 import { Link } from 'react-router-dom';
 import useSharedWebSocket from '../utils/useSharedWebSocket';
-import style from './Page1.module.scss';
+import NavigationCard from './navigation-card';
+import style from './page1.module.scss';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -28,11 +29,13 @@ export default function Page1() {
 
   return (
     <div className={style.container}>
+      <NavigationCard currentPage="page1" />
+
       <Title level={1}>页面 1 - 基本演示</Title>
       
       <Card className={style.card}>
         <Title level={3}>连接状态</Title>
-        <Space direction="vertical" size={16} style={{ width: '100%' }}>
+        <Space vertical size={16} style={{ width: '100%' }}>
           <div className={style.statusItem}>
             <Text strong>连接状态：</Text>
             <Text className={isConnected ? style.connected : style.disconnected}>
@@ -80,21 +83,6 @@ export default function Page1() {
         >
           发送测试消息
         </Button>
-      </Card>
-
-      <Card className={style.card}>
-        <Title level={3}>其他演示页面</Title>
-        <Space direction="vertical" size={8}>
-          <Button type="link" component={Link} to="/websocket/shared-connection-demo/page2">
-            页面 2 - 消息发送测试
-          </Button>
-          <Button type="link" component={Link} to="/websocket/shared-connection-demo/page3">
-            页面 3 - 连接状态监控
-          </Button>
-          <Button type="link" component={Link} to="/websocket/shared-connection-demo">
-            返回演示首页
-          </Button>
-        </Space>
       </Card>
 
       <Card className={style.card}>

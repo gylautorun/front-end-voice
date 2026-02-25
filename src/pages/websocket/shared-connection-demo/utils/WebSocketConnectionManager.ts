@@ -1,4 +1,4 @@
-import Observer from 'src/components/native-websocket/observer';
+import ObserverSocket from 'src/components/native-websocket/observer';
 import Emitter from 'src/components/native-websocket/emitter';
 
 export interface WebSocketMessage {
@@ -13,17 +13,27 @@ export interface ConnectionState {
   readyState: number;
   connectionId: string;
   masterTabId: string;
+  tabCount?: number;
+  lastUpdated?: number;
+}
+
+export interface ConnectionHistoryItem {
+  event: string;
+  description: string;
+  type: 'connection' | 'message' | 'master' | 'other';
+  timestamp: number;
 }
 
 class WebSocketConnectionManager {
   private static instance: WebSocketConnectionManager;
   private channel: BroadcastChannel;
-  private socket: Observer | null = null;
+  private socket: ObserverSocket | null = null;
   private isMaster: boolean = false;
   private tabId: string;
   private connectionState: ConnectionState;
   private messageHandlers: Array<(message: WebSocketMessage) => void> = [];
   private connectionStateHandlers: Array<(state: ConnectionState) => void> = [];
+  private connectionHistory: ConnectionHistoryItem[] = [];
   private url: string = 'ws://localhost:8080';
 
   private constructor() {
@@ -63,15 +73,15 @@ class WebSocketConnectionManager {
       this.handleWebSocketMessage(event);
     }, this);
 
-    Emitter.addListener('onopen', () => {
+    Emitter.addListener('onopen', (event: Event) => {
       this.updateConnectionState(true, 1);
     }, this);
 
-    Emitter.addListener('onclose', () => {
+    Emitter.addListener('onclose', (event: CloseEvent) => {
       this.updateConnectionState(false, 3);
     }, this);
 
-    Emitter.addListener('onerror', () => {
+    Emitter.addListener('onerror', (event: Event) => {
       this.updateConnectionState(false, 3);
     }, this);
 
@@ -168,8 +178,10 @@ class WebSocketConnectionManager {
     this.isMaster = true;
     this.connectionState.masterTabId = this.tabId;
     this.connectionState.connectionId = this.generateTabId();
+    this.connectionState.lastUpdated = Date.now();
     
     console.log(`[WebSocket] Tab ${this.tabId} became master`);
+    this.addConnectionHistory('成为主标签页', `当前标签页 ${this.tabId.substring(this.tabId.length - 8)} 成为主标签页，负责维护 WebSocket 连接`, 'master');
     this.announceMasterStatus();
     this.connect();
   }
@@ -197,11 +209,21 @@ class WebSocketConnectionManager {
   }
 
   private updateConnectionState(isConnected: boolean, readyState: number) {
+    const oldIsConnected = this.connectionState.isConnected;
     this.connectionState = {
       ...this.connectionState,
       isConnected,
-      readyState
+      readyState,
+      lastUpdated: Date.now()
     };
+    
+    if (oldIsConnected !== isConnected) {
+      if (isConnected) {
+        this.addConnectionHistory('连接成功', `WebSocket 连接已成功建立`, 'connection');
+      } else {
+        this.addConnectionHistory('连接断开', `WebSocket 连接已断开`, 'connection');
+      }
+    }
     
     if (this.isMaster) {
       this.broadcast({
@@ -216,7 +238,7 @@ class WebSocketConnectionManager {
 
   private connect() {
     if (this.isMaster && !this.socket) {
-      this.socket = new Observer(this.url, {
+      this.socket = new ObserverSocket(this.url, {
         format: 'json',
         reconnection: true,
         reconnectionAttempts: 5,
@@ -224,6 +246,8 @@ class WebSocketConnectionManager {
         maxReconnectionDelay: 30000,
         reconnectionDelayGrowFactor: 1.5
       });
+      this.socket.onEvent();
+      this.addConnectionHistory('建立连接', `主标签页 ${this.tabId.substring(this.tabId.length - 8)} 正在建立 WebSocket 连接`, 'connection');
     }
   }
 
@@ -279,6 +303,10 @@ class WebSocketConnectionManager {
     return this.tabId;
   }
 
+  public getConnectionHistory(): ConnectionHistoryItem[] {
+    return this.connectionHistory;
+  }
+
   public setUrl(url: string) {
     this.url = url;
     if (this.isMaster && this.socket) {
@@ -293,6 +321,22 @@ class WebSocketConnectionManager {
 
   private notifyConnectionStateHandlers() {
     this.connectionStateHandlers.forEach(handler => handler(this.connectionState));
+  }
+
+  private addConnectionHistory(event: string, description: string, type: 'connection' | 'message' | 'master' | 'other') {
+    const historyItem: ConnectionHistoryItem = {
+      event,
+      description,
+      type,
+      timestamp: Date.now()
+    };
+    
+    this.connectionHistory.unshift(historyItem);
+    
+    // 限制历史记录数量，最多保存 50 条
+    if (this.connectionHistory.length > 50) {
+      this.connectionHistory = this.connectionHistory.slice(0, 50);
+    }
   }
 
   // 清理方法

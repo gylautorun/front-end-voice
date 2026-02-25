@@ -143,6 +143,12 @@ export default class Observer {
         this.passToStore('SOCKET_ONMESSAGE', event);
       }
     };
+    
+    // 检查当前连接状态，如果已经是 OPEN，手动触发 onopen 事件
+    if (this.WebSocket.readyState === WebSocket.OPEN) {
+      const openEvent = new Event('open');
+      this.WebSocket.onopen?.(openEvent as any);
+    }
   }
   
   passToStore(eventName: string, event: any): void {

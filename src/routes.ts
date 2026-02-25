@@ -22,6 +22,7 @@ import {
     SITE_VIRTUAL_LIST_FIXED,
 
     SITE_MAP_WEBSOCKET_DEMO,
+    SITE_MAP_WEBSOCKET_SHARED_CONNECTION_DEMO,
 
 } from './site-map';
 
@@ -115,5 +116,10 @@ export const routes = [
         key: SITE_MAP_WEBSOCKET_DEMO.key,
         path: SITE_MAP_WEBSOCKET_DEMO.path,
         component: React.lazy(() => import('./pages/websocket/websocket-demo/index')),
+    },
+    {
+        key: SITE_MAP_WEBSOCKET_SHARED_CONNECTION_DEMO.key,
+        path: SITE_MAP_WEBSOCKET_SHARED_CONNECTION_DEMO.path,
+        component: React.lazy(() => import('./pages/websocket/shared-connection-demo/index')),
     },
 ];

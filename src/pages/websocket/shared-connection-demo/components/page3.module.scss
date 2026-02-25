@@ -1,0 +1,31 @@
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.card {
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+}
+
+.connected {
+  color: #52c41a;
+  font-weight: bold;
+}
+
+.disconnected {
+  color: #ff4d4f;
+  font-weight: bold;
+}
+
+.master {
+  color: #faad14;
+  font-weight: bold;
+}
+
+.slave {
+  color: #1890ff;
+  font-weight: bold;
+}

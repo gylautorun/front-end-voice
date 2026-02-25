@@ -1,0 +1,57 @@
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+.demo-card {
+  margin: 2rem 0;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.info-card {
+  margin: 2rem 0;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-left: 4px solid #3498db;
+}
+
+.browser-support {
+  margin: 2rem 0;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-left: 4px solid #27ae60;
+}
+
+.feature-list {
+  margin: 1rem 0;
+  padding-left: 2rem;
+
+  li {
+    margin: 0.5rem 0;
+    color: #555;
+    position: relative;
+
+    &::before {
+      content: '✓';
+      color: #27ae60;
+      font-weight: bold;
+      position: absolute;
+      left: -1.5rem;
+    }
+  }
+}
+
+.browser-list {
+  margin: 1rem 0;
+  padding-left: 2rem;
+
+  li {
+    margin: 0.5rem 0;
+    color: #555;
+  }
+}
+

@@ -167,6 +167,23 @@ export const SITE_MAP_WEBSOCKET_LIST = {
     ],
 };
 
+// WebGPU 示例
+export const SITE_MAP_WEB_GPU_TRIANGLE = {
+    entry: ENTRY_MAIN,
+    key: 'web-gpu-triangle',
+    label: () => '三角形',
+    path: '/web-gpu/triangle',
+};
+export const SITE_MAP_WEB_GPU_LIST = {
+    entry: ENTRY_MAIN,
+    key: 'web-gpu',
+    label: () => 'WebGPU 示例',
+    path: '/web-gpu',
+    children: [
+        SITE_MAP_WEB_GPU_TRIANGLE,
+    ],
+};
+
 export const SITE_MAP_MAIN = {
     label: () => '主菜单',
     entry: ENTRY_MAIN,
@@ -176,6 +193,7 @@ export const SITE_MAP_MAIN = {
         SITE_MAP_SPEECH_SYNTHESIS,
         SITE_MAP_SOCKET_GROUP,
         SITE_MAP_WEBSOCKET_LIST,
+        SITE_MAP_WEB_GPU_LIST,
         SITE_MAP_MEDIA_DEVICE,
         SITE_MAP_AUDIO_CONTEXT,
         SITE_MAP_IMG_VIDEO_PREVIEW,

@@ -18,10 +18,15 @@ export const useWebSocket = (
   const [readyState, setReadyState] = useState<number>(WebSocket.CLOSED);
   const observerRef = useRef<Observer | null>(null);
   const reconnectAttemptRef = useRef(0);
+  const optionsRef = useRef(options);
+  
+  useEffect(() => {
+    optionsRef.current = options;
+  }, [options]);
   
   const connect = useCallback((customUrl?: string, customOptions?: WebSocketOpts) => {
     const connectUrl = customUrl || url;
-    const connectOptions = { ...options, ...customOptions };
+    const connectOptions = { ...optionsRef.current, ...customOptions };
     
     if (!connectUrl) {
       throw new Error('[react-native-socket] cannot locate connection');
@@ -51,22 +56,16 @@ export const useWebSocket = (
       setReadyState(WebSocket.CLOSED);
     };
     
-    const handleMessage = (event: MessageEvent) => {
-      // 消息处理由用户通过 onMessage 回调处理
-    };
-    
     Emitter.addListener('onopen', handleOpen, null);
     Emitter.addListener('onclose', handleClose, null);
     Emitter.addListener('onerror', handleError, null);
-    Emitter.addListener('onmessage', handleMessage, null);
     
     return () => {
       Emitter.removeListener('onopen', handleOpen, null);
       Emitter.removeListener('onclose', handleClose, null);
       Emitter.removeListener('onerror', handleError, null);
-      Emitter.removeListener('onmessage', handleMessage, null);
     };
-  }, [url, options]);
+  }, [url]);
   
   const disconnect = useCallback(() => {
     if (observerRef.current) {
@@ -83,7 +82,7 @@ export const useWebSocket = (
     if (observerRef.current) {
       observerRef.current.send(data);
     } else if (socket) {
-      if (options.format === 'json' && typeof data === 'object') {
+      if (optionsRef.current.format === 'json' && typeof data === 'object') {
         if (typeof socket.sendObj === 'function') {
           socket.sendObj(data);
         } else {
@@ -93,15 +92,31 @@ export const useWebSocket = (
         socket.send(data as string);
       }
     }
-  }, [socket, options.format]);
+  }, [socket]);
   
   // 初始化连接
   useEffect(() => {
-    if (url && !options.connectManually) {
+    if (url && !optionsRef.current.connectManually) {
       const cleanup = connect();
       return cleanup;
     }
-  }, [url, options.connectManually, connect]);
+  }, [url, connect]);
+  
+  // 更新消息处理器
+  useEffect(() => {
+    const handleMessage = (...args: any[]) => {
+      const event = args[0] as MessageEvent;
+      if (optionsRef.current.onMessage) {
+        optionsRef.current.onMessage(event);
+      }
+    };
+    
+    Emitter.addListener('onmessage', handleMessage, null);
+    
+    return () => {
+      Emitter.removeListener('onmessage', handleMessage, null);
+    };
+  }, []);
   
   // 清理函数
   useEffect(() => {

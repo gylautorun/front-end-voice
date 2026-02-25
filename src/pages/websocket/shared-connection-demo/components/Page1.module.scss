@@ -1,0 +1,52 @@
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.card {
+  margin-bottom: 24px;
+}
+
+.statusItem {
+  display: flex;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.statusItem:last-child {
+  border-bottom: none;
+}
+
+.connected {
+  color: #52c41a;
+  font-weight: 500;
+}
+
+.disconnected {
+  color: #ff4d4f;
+  font-weight: 500;
+}
+
+.master {
+  color: #1890ff;
+  font-weight: 500;
+}
+
+.slave {
+  color: #faad14;
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+  }
+  
+  .statusItem {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+}

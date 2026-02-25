@@ -5,6 +5,22 @@ export interface WebSocketGlobalConfig {
   options: WebSocketOpts;
 }
 
+const defaultOnOpen = (event: Event) => {
+  console.log('全局 WebSocket 连接成功:', event);
+};
+
+const defaultOnClose = (event: CloseEvent) => {
+  console.log('全局 WebSocket 连接关闭:', event);
+};
+
+const defaultOnError = (event: Event) => {
+  console.error('全局 WebSocket 错误:', event);
+};
+
+const defaultOnMessage = (event: MessageEvent) => {
+  console.log('全局 WebSocket 收到消息:', event.data);
+};
+
 export const defaultWebSocketConfig: WebSocketGlobalConfig = {
   url: 'ws://localhost:8080',
   options: {
@@ -15,18 +31,10 @@ export const defaultWebSocketConfig: WebSocketGlobalConfig = {
     maxReconnectionDelay: 30000,
     reconnectionDelayGrowFactor: 1.5,
     connectManually: false,
-    onOpen: (event) => {
-      console.log('全局 WebSocket 连接成功:', event);
-    },
-    onClose: (event) => {
-      console.log('全局 WebSocket 连接关闭:', event);
-    },
-    onError: (event) => {
-      console.error('全局 WebSocket 错误:', event);
-    },
-    onMessage: (event) => {
-      console.log('全局 WebSocket 收到消息:', event.data);
-    }
+    onOpen: defaultOnOpen,
+    onClose: defaultOnClose,
+    onError: defaultOnError,
+    onMessage: defaultOnMessage
   }
 };
 

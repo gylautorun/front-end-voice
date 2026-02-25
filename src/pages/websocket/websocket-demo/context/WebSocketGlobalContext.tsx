@@ -1,4 +1,4 @@
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode, useState, useEffect, useRef, useCallback } from 'react';
 import { useWebSocket } from 'src/components/native-websocket';
 import { wsConfigManager } from '../config/wsConfig';
 import { UseWebSocketReturn } from 'src/components/native-websocket';
@@ -6,13 +6,31 @@ import { UseWebSocketReturn } from 'src/components/native-websocket';
 interface WebSocketGlobalContextType extends UseWebSocketReturn {
   updateConfig: (config: any) => void;
   resetConfig: () => void;
+  onMessage?: (event: MessageEvent) => void;
+  setOnMessage: (handler: ((event: MessageEvent) => void) | undefined) => void;
 }
 
 const WebSocketGlobalContext = createContext<WebSocketGlobalContextType | null>(null);
 
 export const WebSocketGlobalProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const config = wsConfigManager.getConfig();
-  const ws = useWebSocket(config.url, config.options);
+  const [onMessage, setOnMessage] = useState<((event: MessageEvent) => void) | undefined>(undefined);
+  const onMessageRef = useRef<((event: MessageEvent) => void) | undefined>(undefined);
+  
+  useEffect(() => {
+    onMessageRef.current = onMessage;
+  }, [onMessage]);
+  
+  const handleGlobalMessage = useCallback((event: MessageEvent) => {
+    if (onMessageRef.current) {
+      onMessageRef.current(event);
+    }
+  }, []);
+  
+  const ws = useWebSocket(config.url, {
+    ...config.options,
+    onMessage: handleGlobalMessage
+  });
 
   const updateConfig = (newConfig: any) => {
     wsConfigManager.updateConfig(newConfig);
@@ -23,7 +41,7 @@ export const WebSocketGlobalProvider: React.FC<{ children: ReactNode }> = ({ chi
   };
 
   return (
-    <WebSocketGlobalContext.Provider value={{ ...ws, updateConfig, resetConfig }}>
+    <WebSocketGlobalContext.Provider value={{ ...ws, updateConfig, resetConfig, onMessage, setOnMessage }}>
       {children}
     </WebSocketGlobalContext.Provider>
   );

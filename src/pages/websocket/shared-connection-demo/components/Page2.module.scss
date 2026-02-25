@@ -1,0 +1,15 @@
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.card {
+  margin-bottom: 24px;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+  }
+}

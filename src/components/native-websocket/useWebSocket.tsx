@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import Observer from './observer';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import ObserverSocket from './observer';
 import Emitter from './emitter';
 import { WebSocketOpts, UseWebSocketReturn, WebSocketInstance } from './type';
 
@@ -16,7 +16,7 @@ export const useWebSocket = (
   const [socket, setSocket] = useState<WebSocketInstance | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [readyState, setReadyState] = useState<number>(WebSocket.CLOSED);
-  const observerRef = useRef<Observer | null>(null);
+  const observerRef = useRef<ObserverSocket | null>(null);
   const reconnectAttemptRef = useRef(0);
   const optionsRef = useRef(options);
   
@@ -32,7 +32,7 @@ export const useWebSocket = (
       throw new Error('[react-native-socket] cannot locate connection');
     }
     
-    const observer = new Observer(connectUrl, { ...connectOptions, connectManually: true });
+    const observer = new ObserverSocket(connectUrl, { ...connectOptions, connectManually: true });
     const ws = observer.connect(connectUrl, connectOptions);
     observer.onEvent();
     
@@ -125,14 +125,16 @@ export const useWebSocket = (
     };
   }, [disconnect]);
   
-  return {
+  const wsReturn = useMemo(() => ({
     socket,
     connect,
     disconnect,
     send,
     isConnected,
     readyState
-  };
+  }), [socket, connect, disconnect, send, isConnected, readyState]);
+  
+  return wsReturn;
 };
 
 /**

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button, Input, List, Typography } from 'antd';
 import { useWebSocketGlobal } from '../context/WebSocketGlobalContext';
 import style from '../index.module.scss';
@@ -8,6 +8,7 @@ const { Paragraph } = Typography;
 export default function ChatRoom() {
   const [messages, setMessages] = useState<string[]>([]);
   const [inputMessage, setInputMessage] = useState('');
+  const cleanupRef = useRef<(() => void) | undefined>(undefined);
   
   const { send, isConnected, readyState, setOnMessage } = useWebSocketGlobal();
 
@@ -29,44 +30,60 @@ export default function ChatRoom() {
     setInputMessage(e.target.value);
   };
 
-  useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      try {
-        const data = JSON.parse(event.data);
-        let displayMessage = '';
-        
-        if (data.type === 'chat') {
-          if (data.sender === 'user') {
-            displayMessage = `我: ${data.content}`;
-          } else {
-            displayMessage = `${data.sender}: ${data.content}`;
-          }
-        } else if (data.type === 'welcome') {
-          displayMessage = `系统: ${data.message}`;
-        } else if (data.type === 'system') {
-          displayMessage = `系统: ${data.message}`;
-        } else if (data.type === 'echo') {
-          displayMessage = `服务器回显: ${data.content}`;
-        } else {
-          displayMessage = `服务器: ${data.content || event.data}`;
-        }
-        
-        setMessages(prev => [...prev, displayMessage]);
-      } catch (error) {
-        setMessages(prev => [...prev, `服务器: ${error}`]);
-      }
-    };
-    
-    if (setOnMessage) {
-      setOnMessage(handleMessage);
+  // 使用 useCallback 确保 handleMessage 引用稳定
+  const handleMessage: (event: MessageEvent) => void = useCallback((event: MessageEvent) => {
+    // 防御性编程：检查 event 是否为 undefined
+    if (!event || !event.data) {
+      console.error('无效的消息事件:', event);
+      return;
     }
     
-    return () => {
-      if (setOnMessage) {
-        setOnMessage(undefined);
+    try {
+      const data = JSON.parse(event.data);
+      let displayMessage = '';
+      
+      if (data.type === 'chat') {
+        if (data.sender === 'user') {
+          displayMessage = `我: ${data.content}`;
+        } else {
+          displayMessage = `${data.sender}: ${data.content}`;
+        }
+      } else if (data.type === 'welcome') {
+        displayMessage = `系统: ${data.message}`;
+      } else if (data.type === 'system') {
+        displayMessage = `系统: ${data.message}`;
+      } else if (data.type === 'echo') {
+        displayMessage = `服务器回显: ${data.content.content}`;
+      } else {
+        displayMessage = `服务器: ${data.content || event.data}`;
       }
-    };
-  }, [setOnMessage]);
+      
+      setMessages(prev => [...prev, displayMessage]);
+    } catch (error) {
+      setMessages(prev => [...prev, `服务器: ${event?.data || '无法解析消息'}`]);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (setOnMessage) {
+      // 清理之前的处理器
+      if (cleanupRef.current) {
+        cleanupRef.current();
+        cleanupRef.current = undefined;
+      }
+      
+      // 注册新的处理器
+      cleanupRef.current = setOnMessage(handleMessage);
+      
+      // 组件卸载时清理
+      return () => {
+        if (cleanupRef.current) {
+          cleanupRef.current();
+          cleanupRef.current = undefined;
+        }
+      };
+    }
+  }, [setOnMessage, handleMessage]);
 
   const sendButtonDisabled = !isConnected || !inputMessage.trim();
 

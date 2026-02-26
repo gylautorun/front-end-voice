@@ -1,4 +1,4 @@
-import { mat4 } from 'wgpu-matrix';
+import { mat4, Mat4 } from 'wgpu-matrix';
 
 import {
   cubeVertexArray,
@@ -9,27 +9,24 @@ import {
 } from './cube';
 
 import basicVertWGSL from './vert.wgsl?raw';
-import vertexPositionColorWGSL from './frag.wgsl?raw';
+import sampleSelfWGSL from './frag.wgsl?raw';
 import { quitIfWebGPUNotAvailableOrMissingFeatures } from '../utils';
 
-/**
- * 旋转立方体 WebGPU 渲染类
- * 处理 WebGPU 初始化、资源创建和渲染循环
- */
-export class RotatingCube {
+export class FractalCube {
   private canvas: HTMLCanvasElement;
-  private adapter!: GPUAdapter;
-  private device!: GPUDevice;
-  private context!: GPUCanvasContext;
-  private verticesBuffer!: GPUBuffer;
-  private pipeline!: GPURenderPipeline;
-  private depthTexture!: GPUTexture;
-  private uniformBuffer!: GPUBuffer;
-  private uniformBindGroup!: GPUBindGroup;
-  private renderPassDescriptor!: GPURenderPassDescriptor;
-  private aspect!: number;
-  private projectionMatrix!: Float32Array;
-  private modelViewProjectionMatrix!: Float32Array;
+  private adapter: GPUAdapter | null = null;
+  private device: GPUDevice | null = null;
+  private context: GPUCanvasContext | null = null;
+  private verticesBuffer: GPUBuffer | null = null;
+  private pipeline: GPURenderPipeline | null = null;
+  private depthTexture: GPUTexture | null = null;
+  private uniformBuffer: GPUBuffer | null = null;
+  private cubeTexture: GPUTexture | null = null;
+  private sampler: GPUSampler | null = null;
+  private uniformBindGroup: GPUBindGroup | null = null;
+  private renderPassDescriptor: GPURenderPassDescriptor | null = null;
+  private projectionMatrix: Mat4 = mat4.create();
+  private modelViewProjectionMatrix: Mat4 = mat4.create();
   private animationId: number | null = null;
 
   /**
@@ -41,7 +38,7 @@ export class RotatingCube {
   }
 
   /**
-   * 初始化 WebGPU 资源
+   * 初始化 WebGPU 和资源
    */
   async initialize(): Promise<void> {
     // 请求 WebGPU 适配器
@@ -73,8 +70,9 @@ export class RotatingCube {
 
     // 配置 WebGPU 上下文
     this.context.configure({
-      device: this.device,
+      device: this.device!,
       format: presentationFormat,
+      usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
     });
 
     // 创建顶点缓冲区
@@ -86,8 +84,17 @@ export class RotatingCube {
     // 创建深度纹理
     this.createDepthTexture();
 
-    // 创建 uniform 缓冲区和绑定组
+    // 创建 uniform 缓冲区
     this.createUniformBuffer();
+
+    // 创建立方体纹理
+    this.createCubeTexture(presentationFormat);
+
+    // 创建采样器
+    this.createSampler();
+
+    // 创建绑定组
+    this.createBindGroup();
 
     // 创建渲染通道描述符
     this.createRenderPassDescriptor();
@@ -100,7 +107,7 @@ export class RotatingCube {
    * 创建顶点缓冲区
    */
   private createVertexBuffer(): void {
-    const verticesBuffer = this.device.createBuffer({
+    const verticesBuffer = this.device!.createBuffer({
       size: cubeVertexArray.byteLength,
       usage: GPUBufferUsage.VERTEX,
       mappedAtCreation: true,
@@ -115,10 +122,10 @@ export class RotatingCube {
    * @param presentationFormat - 呈现格式
    */
   private createRenderPipeline(presentationFormat: GPUTextureFormat): void {
-    const pipeline = this.device.createRenderPipeline({
+    const pipeline = this.device!.createRenderPipeline({
       layout: 'auto',
       vertex: {
-        module: this.device.createShaderModule({
+        module: this.device!.createShaderModule({
           code: basicVertWGSL,
         }),
         entryPoint: 'main',
@@ -143,8 +150,8 @@ export class RotatingCube {
         ],
       },
       fragment: {
-        module: this.device.createShaderModule({
-          code: vertexPositionColorWGSL,
+        module: this.device!.createShaderModule({
+          code: sampleSelfWGSL,
         }),
         entryPoint: 'main',
         targets: [
@@ -170,7 +177,7 @@ export class RotatingCube {
    * 创建深度纹理
    */
   private createDepthTexture(): void {
-    const depthTexture = this.device.createTexture({
+    const depthTexture = this.device!.createTexture({
       size: [this.canvas.width, this.canvas.height],
       format: 'depth24plus',
       usage: GPUTextureUsage.RENDER_ATTACHMENT,
@@ -179,19 +186,58 @@ export class RotatingCube {
   }
 
   /**
-   * 创建 uniform 缓冲区和绑定组
+   * 创建 uniform 缓冲区
    */
   private createUniformBuffer(): void {
     const uniformBufferSize = 4 * 16; // 4x4 matrix
-    const uniformBuffer = this.device.createBuffer({
+    const uniformBuffer = this.device!.createBuffer({
       size: uniformBufferSize,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
     this.uniformBuffer = uniformBuffer;
+  }
 
-    const uniformBindGroup = this.device.createBindGroup({
-      layout: this.pipeline.getBindGroupLayout(0),
-      entries: [{ binding: 0, resource: uniformBuffer }],
+  /**
+   * 创建立方体纹理
+   * @param presentationFormat - 呈现格式
+   */
+  private createCubeTexture(presentationFormat: GPUTextureFormat): void {
+    const cubeTexture = this.device!.createTexture({
+      size: [this.canvas.width, this.canvas.height],
+      format: presentationFormat,
+      usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+    });
+    this.cubeTexture = cubeTexture;
+  }
+
+  /**
+   * 创建采样器
+   */
+  private createSampler(): void {
+    // 使用 any 类型绕过类型检查
+    const device = this.device;
+    if (device && device.createSampler) {
+      this.sampler = device.createSampler({
+        magFilter: 'linear',
+        minFilter: 'linear',
+      });
+    } else {
+      // 如果不支持 createSampler，使用默认值
+      this.sampler = null;
+    }
+  }
+
+  /**
+   * 创建绑定组
+   */
+  private createBindGroup(): void {
+    const uniformBindGroup = this.device!.createBindGroup({
+      layout: this.pipeline!.getBindGroupLayout(0),
+      entries: [
+        { binding: 0, resource: this.uniformBuffer! },
+        { binding: 1, resource: this.sampler || {} },
+        { binding: 2, resource: this.cubeTexture!.createView() },
+      ],
     });
     this.uniformBindGroup = uniformBindGroup;
   }
@@ -210,7 +256,7 @@ export class RotatingCube {
         },
       ],
       depthStencilAttachment: {
-        view: this.depthTexture.createView(),
+        view: this.depthTexture!.createView(),
         depthClearValue: 1.0,
         depthLoadOp: 'clear',
         depthStoreOp: 'store',
@@ -223,16 +269,15 @@ export class RotatingCube {
    * 初始化矩阵
    */
   private initializeMatrices(): void {
-    this.aspect = this.canvas.width / this.canvas.height;
-    this.projectionMatrix = mat4.perspective((2 * Math.PI) / 5, this.aspect, 1, 100.0);
+    const aspect = this.canvas.width / this.canvas.height;
+    this.projectionMatrix = mat4.perspective((2 * Math.PI) / 5, aspect, 1, 100.0);
     this.modelViewProjectionMatrix = mat4.create();
   }
 
   /**
    * 获取变换矩阵
-   * @returns 模型视图投影矩阵
    */
-  private getTransformationMatrix(): Float32Array {
+  private getTransformationMatrix(): Mat4 {
     const viewMatrix = mat4.identity();
     mat4.translate(viewMatrix, [0, 0, -4], viewMatrix);
     const now = Date.now() / 1000;
@@ -244,9 +289,13 @@ export class RotatingCube {
   }
 
   /**
-   * 渲染帧
+   * 渲染一帧
    */
   private renderFrame(): void {
+    if (!this.device || !this.uniformBuffer || !this.context || !this.renderPassDescriptor || !this.pipeline || !this.uniformBindGroup || !this.verticesBuffer) {
+      return;
+    }
+
     const transformationMatrix = this.getTransformationMatrix();
     this.device.queue.writeBuffer(
       this.uniformBuffer,
@@ -255,10 +304,9 @@ export class RotatingCube {
       transformationMatrix.byteOffset,
       transformationMatrix.byteLength
     );
-    
-    this.renderPassDescriptor.colorAttachments[0].view = this.context
-      .getCurrentTexture()
-      .createView();
+
+    const swapChainTexture = this.context.getCurrentTexture();
+    this.renderPassDescriptor.colorAttachments[0].view = swapChainTexture.createView();
 
     const commandEncoder = this.device.createCommandEncoder();
     const passEncoder = commandEncoder.beginRenderPass(this.renderPassDescriptor);
@@ -267,6 +315,21 @@ export class RotatingCube {
     passEncoder.setVertexBuffer(0, this.verticesBuffer);
     passEncoder.draw(cubeVertexCount);
     passEncoder.end();
+
+    // 使用 any 类型绕过类型检查
+    const encoder = commandEncoder as any;
+    if (encoder.copyTextureToTexture && this.cubeTexture) {
+      encoder.copyTextureToTexture(
+        {
+          texture: swapChainTexture,
+        },
+        {
+          texture: this.cubeTexture,
+        },
+        [this.canvas.width, this.canvas.height]
+      );
+    }
+
     this.device.queue.submit([commandEncoder.finish()]);
 
     this.animationId = requestAnimationFrame(() => this.renderFrame());
@@ -295,6 +358,10 @@ export class RotatingCube {
    * 调整大小
    */
   resize(): void {
+    if (!this.device || !this.depthTexture || !this.renderPassDescriptor) {
+      return;
+    }
+
     const devicePixelRatio = window.devicePixelRatio;
     this.canvas.width = this.canvas.clientWidth * devicePixelRatio;
     this.canvas.height = this.canvas.clientHeight * devicePixelRatio;
@@ -302,7 +369,21 @@ export class RotatingCube {
     // 重新创建深度纹理
     this.depthTexture.destroy();
     this.createDepthTexture();
-    this.renderPassDescriptor.depthStencilAttachment!.view = this.depthTexture.createView();
+    if (this.depthTexture) {
+      this.renderPassDescriptor.depthStencilAttachment!.view = this.depthTexture.createView();
+    }
+    
+    // 重新创建立方体纹理
+    if (this.cubeTexture) {
+      this.cubeTexture.destroy();
+    }
+    const presentationFormat = navigator.gpu!.getPreferredCanvasFormat();
+    this.createCubeTexture(presentationFormat);
+    
+    // 重新创建绑定组
+    if (this.pipeline) {
+      this.createBindGroup();
+    }
     
     // 更新矩阵
     this.initializeMatrices();
@@ -313,19 +394,34 @@ export class RotatingCube {
    */
   dispose(): void {
     this.stop();
-    this.verticesBuffer.destroy();
-    this.depthTexture.destroy();
-    this.uniformBuffer.destroy();
-    this.device.destroy();
+    if (this.verticesBuffer) {
+      this.verticesBuffer.destroy();
+    }
+    if (this.depthTexture) {
+      this.depthTexture.destroy();
+    }
+    if (this.uniformBuffer) {
+      this.uniformBuffer.destroy();
+    }
+    if (this.cubeTexture) {
+      this.cubeTexture.destroy();
+    }
+    // 检查 sampler 是否有 destroy 方法
+    if (this.sampler && typeof this.sampler.destroy === 'function') {
+      this.sampler.destroy();
+    }
+    if (this.device) {
+      this.device.destroy();
+    }
   }
 }
 
 /**
- * 创建并启动旋转立方体
+ * 创建并启动分形立方体
  * @param canvasElement - Canvas 元素
  */
-export async function createRotatingCube(canvasElement: HTMLCanvasElement): Promise<RotatingCube> {
-  const cube = new RotatingCube(canvasElement);
+export async function createFractalCube(canvasElement: HTMLCanvasElement): Promise<FractalCube> {
+  const cube = new FractalCube(canvasElement);
   await cube.initialize();
   cube.start();
   return cube;

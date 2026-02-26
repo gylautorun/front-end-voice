@@ -104,6 +104,7 @@ interface GPUDevice {
   createBindGroupLayout(descriptor: GPUBindGroupLayoutDescriptor): GPUBindGroupLayout;
   createBindGroup(descriptor: GPUBindGroupDescriptor): GPUBindGroup;
   createTexture(descriptor: GPUTextureDescriptor): GPUTexture;
+  createSampler(descriptor: GPUSamplerDescriptor): GPUSampler;
   queue: GPUQueue;
   lost: Promise<GPUDeviceLostInfo>;
   addEventListener(type: 'uncapturederror', listener: (event: GPUUncapturedErrorEvent) => void): void;
@@ -330,7 +331,27 @@ interface GPUBindGroupEntry {
   resource: GPUBuffer | GPUTexture | GPUTextureView | GPUSampler;
 }
 
-interface GPUSampler {}
+interface GPUSampler {
+  destroy(): void;
+}
+
+interface GPUSamplerDescriptor {
+  addressModeU?: GPUAddressMode;
+  addressModeV?: GPUAddressMode;
+  addressModeW?: GPUAddressMode;
+  magFilter?: GPUFilterMode;
+  minFilter?: GPUFilterMode;
+  mipmapFilter?: GPUFilterMode;
+  maxAnisotropy?: number;
+  compare?: GPUCompareFunction;
+  lodMinClamp?: number;
+  lodMaxClamp?: number;
+  name?: string;
+}
+
+type GPUAddressMode = 'clamp-to-edge' | 'repeat' | 'mirror-repeat';
+type GPUFilterMode = 'nearest' | 'linear';
+type GPUCompareFunction = 'never' | 'less' | 'equal' | 'less-equal' | 'greater' | 'not-equal' | 'greater-equal' | 'always';
 
 interface GPUTextureDescriptor {
   size: [number, number, number] | [number, number];
@@ -345,6 +366,7 @@ interface GPUCanvasConfiguration {
   alphaMode?: 'opaque' | 'premultiplied' | 'unpremultiplied';
   colorSpace?: PredefinedColorSpace | string;
   size?: [number, number];
+  usage?: number;
 }
 
 interface HTMLCanvasElement {

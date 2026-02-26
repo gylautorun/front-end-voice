@@ -68,8 +68,10 @@ export default defineConfig({
           '@': path.resolve('src'),
           'src': path.resolve('src'),
       },
-      extensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
+      extensions: ['.ts', '.tsx', '.js', '.jsx', '.json', '.wgsl'],
   },
+  // WGSL 文件支持导入, 配置后, 可以在代码中直接导入 wgsl 文件, 而不是将作为JS模块处理
+  assetsInclude: ['**/*.wgsl'],
   build: {
     terserOptions: {
       compress: {

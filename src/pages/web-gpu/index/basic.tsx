@@ -210,7 +210,7 @@ export default function BasicWebgpuDemo({ width = 800, height = 600 }: WebGPUDem
 
 /**
  * 初始化 WebGPU 的 useEffect 钩子
- * 在组件挂载时执行一次，检查浏览器是否支持 WebGPU 并初始化
+ * 在组件挂载后执行，此时 canvas 元素已渲染到 DOM 中
  */
   useEffect(() => {
     // 检查浏览器是否支持 WebGPU
@@ -261,19 +261,19 @@ export default function BasicWebgpuDemo({ width = 800, height = 600 }: WebGPUDem
         </div>
       )}
 
-      {isInitialized ? (
-        <div className={styles.canvasContainer}>
-          <canvas ref={canvasRef} className={styles.canvas} width={width} height={height} />
+      <div className={styles.canvasContainer}>
+        <canvas ref={canvasRef} className={styles.canvas} width={width} height={height} />
+        {isInitialized ? (
           <div className={styles.info}>
             <p>WebGPU 初始化成功！</p>
             <p>渲染状态: 正在绘制一个橙色三角形</p>
           </div>
-        </div>
-      ) : (
-        <div className={styles.loading}>
-          <p>正在初始化 WebGPU...</p>
-        </div>
-      )}
+        ) : (
+          <div className={styles.loading}>
+            <p>正在初始化 WebGPU...</p>
+          </div>
+        )}
+      </div>
 
       <div className={styles.description}>
         <h2>演示说明</h2>

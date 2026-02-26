@@ -28,6 +28,7 @@ import {
     SITE_MAP_WEB_GPU_TRIANGLE,
     SITE_MAP_WEB_GPU_ROTATING,
     SITE_MAP_WEB_GPU_FRACTAL_CUBE,
+    SITE_MAP_WEB_GPU_COMPUTE_BOIDS,
 
 } from './site-map';
 
@@ -147,5 +148,10 @@ export const routes = [
         key: SITE_MAP_WEB_GPU_FRACTAL_CUBE.key,
         path: SITE_MAP_WEB_GPU_FRACTAL_CUBE.path,
         component: React.lazy(() => import('./pages/web-gpu/fractal-cube/index')),
+    },
+    {
+        key: SITE_MAP_WEB_GPU_COMPUTE_BOIDS.key,
+        path: SITE_MAP_WEB_GPU_COMPUTE_BOIDS.path,
+        component: React.lazy(() => import('./pages/web-gpu/compute-boids/index')),
     },
 ];

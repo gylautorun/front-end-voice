@@ -192,6 +192,12 @@ export const SITE_MAP_WEB_GPU_FRACTAL_CUBE = {
     label: () => '分形立方体',
     path: '/web-gpu/fractal-cube',
 };
+export const SITE_MAP_WEB_GPU_COMPUTE_BOIDS = {
+    entry: ENTRY_MAIN,
+    key: 'web-gpu-compute-boids',
+    label: () => '计算 boids',
+    path: '/web-gpu/compute-boids',
+};
 export const SITE_MAP_WEB_GPU_LIST = {
     entry: ENTRY_MAIN,
     key: 'web-gpu',
@@ -202,6 +208,7 @@ export const SITE_MAP_WEB_GPU_LIST = {
         SITE_MAP_WEB_GPU_TRIANGLE,
         SITE_MAP_WEB_GPU_ROTATING,
         SITE_MAP_WEB_GPU_FRACTAL_CUBE,
+        SITE_MAP_WEB_GPU_COMPUTE_BOIDS,
     ],
 };
 

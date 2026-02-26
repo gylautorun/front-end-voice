@@ -1,6 +1,6 @@
 /** 如果获取适配器失败，显示错误对话框。 */
 export function quitIfAdapterNotAvailable(
-  adapter: GPUAdapter | null
+  adapter?: GPUAdapter | null
 ): asserts adapter {
   if (!('gpu' in navigator)) {
     fail('navigator.gpu 未定义 - 此浏览器不支持 WebGPU');

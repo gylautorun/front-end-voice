@@ -12,17 +12,27 @@ interface GPU {
 interface GPURequestAdapterOptions {
   powerPreference?: GPUPowerPreference;
   forceFallbackAdapter?: boolean;
+  featureLevel?: string;
 }
 
 type GPUPowerPreference = 'default' | 'low-power' | 'high-performance';
 
-interface GPUAdapter {
-  requestDevice(descriptor?: GPUDeviceDescriptor): Promise<GPUDevice>;
-  features: Iterable<GPUFeatureName>;
-  limits: GPUSupportedLimits;
-}
+type GPUSize32 = number;
 
 type GPUFeatureName = string;
+
+type GPUDeviceLostReason = string;
+
+type GPULoadOp = 'clear' | 'load';
+type GPUStoreOp = 'discard' | 'store';
+
+type GPUTextureFormat = string;
+
+interface GPUAdapter {
+  requestDevice(descriptor?: GPUDeviceDescriptor): Promise<GPUDevice>;
+  features: Set<GPUFeatureName>;
+  limits: GPUSupportedLimits;
+}
 
 interface GPUSupportedLimits {
   maxTextureDimension1D: number;
@@ -85,12 +95,29 @@ interface GPULimits {
   maxComputeWorkgroupSizeZ?: number;
   maxComputeWorkgroupsPerDimension?: number;
 }
+
 interface GPUDevice {
   createShaderModule(descriptor: GPUShaderModuleDescriptor): GPUShaderModule;
   createBuffer(descriptor: GPUBufferDescriptor): GPUBuffer;
   createRenderPipeline(descriptor: GPURenderPipelineDescriptor): GPURenderPipeline;
   createCommandEncoder(): GPUCommandEncoder;
+  createBindGroupLayout(descriptor: GPUBindGroupLayoutDescriptor): GPUBindGroupLayout;
+  createBindGroup(descriptor: GPUBindGroupDescriptor): GPUBindGroup;
+  createTexture(descriptor: GPUTextureDescriptor): GPUTexture;
   queue: GPUQueue;
+  lost: Promise<GPUDeviceLostInfo>;
+  addEventListener(type: 'uncapturederror', listener: (event: GPUUncapturedErrorEvent) => void): void;
+  removeEventListener(type: 'uncapturederror', listener: (event: GPUUncapturedErrorEvent) => void): void;
+  destroy(): void;
+}
+
+interface GPUDeviceLostInfo {
+  reason: GPUDeviceLostReason;
+  message: string;
+}
+
+interface GPUUncapturedErrorEvent {
+  error: Error;
 }
 
 interface GPUCanvasContext {
@@ -100,6 +127,9 @@ interface GPUCanvasContext {
 
 interface GPUBuffer {
   readonly usage: number;
+  getMappedRange(offset?: number, size?: number): ArrayBuffer;
+  unmap(): void;
+  destroy(): void;
 }
 
 interface GPURenderPipeline {
@@ -108,13 +138,25 @@ interface GPURenderPipeline {
 
 interface GPURenderPassDescriptor {
   colorAttachments: GPURenderPassColorAttachment[];
+  depthStencilAttachment?: GPURenderPassDepthStencilAttachment;
 }
 
 interface GPURenderPassColorAttachment {
   view: GPUTextureView;
-  clearValue?: GPUColorDict;
+  clearValue?: GPUColorDict | [number, number, number, number];
   loadOp: GPULoadOp;
   storeOp: GPUStoreOp;
+  resolveTarget?: GPUTextureView;
+}
+
+interface GPURenderPassDepthStencilAttachment {
+  view: GPUTextureView;
+  depthClearValue: number;
+  depthLoadOp: GPULoadOp;
+  depthStoreOp: GPUStoreOp;
+  stencilClearValue?: number;
+  stencilLoadOp?: GPULoadOp;
+  stencilStoreOp?: GPUStoreOp;
 }
 
 interface GPUColorDict {
@@ -133,6 +175,7 @@ interface GPUShaderModule {}
 interface GPUBufferDescriptor {
   size: number;
   usage: number;
+  mappedAtCreation?: boolean;
 }
 
 interface GPURenderPipelineDescriptor {
@@ -140,6 +183,7 @@ interface GPURenderPipelineDescriptor {
   vertex: GPUVertexState;
   fragment: GPUFragmentState;
   primitive: GPUPrimitiveState;
+  depthStencil?: GPUDepthStencilState;
 }
 
 interface GPUVertexState {
@@ -156,11 +200,14 @@ interface GPUFragmentState {
 
 interface GPUPrimitiveState {
   topology: GPUPrimitiveTopology;
+  cullMode?: GPUCullMode;
 }
+
+type GPUCullMode = 'none' | 'front' | 'back';
 
 interface GPUVertexBufferLayout {
   arrayStride: number;
-  stepMode: GPUVertexStepMode;
+  stepMode?: GPUVertexStepMode;
   attributes: GPUVertexAttribute[];
 }
 
@@ -174,15 +221,16 @@ interface GPUColorTargetState {
   format: string;
 }
 
+interface GPUDepthStencilState {
+  depthWriteEnabled: boolean;
+  depthCompare: string;
+  format: string;
+}
+
 interface GPUPipelineLayout {}
 
 type GPUVertexStepMode = 'vertex' | 'instance';
-
 type GPUPrimitiveTopology = 'point-list' | 'line-list' | 'line-strip' | 'triangle-list' | 'triangle-strip';
-
-type GPULoadOp = 'clear' | 'load';
-
-type GPUStoreOp = 'discard' | 'store';
 
 // GPUBufferUsage 常量
 enum GPUBufferUsage {
@@ -198,6 +246,24 @@ enum GPUBufferUsage {
   QUERY_RESOLVE = 1 << 9
 }
 
+// GPUTextureUsage 常量
+enum GPUTextureUsage {
+  COPY_SRC = 1 << 0,
+  COPY_DST = 1 << 1,
+  SAMPLED = 1 << 2,
+  STORAGE = 1 << 3,
+  RENDER_ATTACHMENT = 1 << 4,
+  TEXTURE_BINDING = 1 << 2,
+  STORAGE_BINDING = 1 << 3
+}
+
+// GPUShaderStage 常量
+enum GPUShaderStage {
+  VERTEX = 1 << 0,
+  FRAGMENT = 1 << 1,
+  COMPUTE = 1 << 2
+}
+
 interface GPUQueue {
   writeBuffer(buffer: GPUBuffer, bufferOffset: number, data: BufferSource, dataOffset?: number, size?: number): void;
   submit(commandBuffers: GPUCommandBuffer[]): void;
@@ -210,8 +276,9 @@ interface GPUCommandEncoder {
 
 interface GPURenderPassEncoder {
   setPipeline(pipeline: GPURenderPipeline): void;
-  setVertexBuffer(slot: number, buffer: GPUBuffer): void;
-  draw(vertexCount: number): void;
+  setBindGroup(index: number, bindGroup: GPUBindGroup): void;
+  setVertexBuffer(slot: number, buffer: GPUBuffer, offset?: number, size?: number): void;
+  draw(vertexCount: number, instanceCount?: number, firstVertex?: number, firstInstance?: number): void;
   end(): void;
 }
 
@@ -219,16 +286,65 @@ interface GPUCommandBuffer {}
 
 interface GPUTexture {
   createView(): GPUTextureView;
+  destroy(): void;
 }
 
 interface GPUTextureView {}
 
 interface GPUBindGroupLayout {}
 
+interface GPUBindGroup {
+  layout: GPUBindGroupLayout;
+}
+
+interface GPUBindGroupLayoutDescriptor {
+  entries: GPUBindGroupLayoutEntry[];
+}
+
+interface GPUBindGroupLayoutEntry {
+  binding: number;
+  visibility: number;
+  buffer?: GPUBufferBindingLayout;
+  texture?: GPUTextureBindingLayout;
+}
+
+interface GPUBufferBindingLayout {
+  type?: 'uniform' | 'storage' | 'read-only-storage';
+  hasDynamicOffset?: boolean;
+  minBindingSize?: number;
+}
+
+interface GPUTextureBindingLayout {
+  sampleType?: 'float' | 'unfilterable-float' | 'depth' | 'sint' | 'uint';
+  viewDimension?: '1d' | '2d' | '2d-array' | 'cube' | 'cube-array' | '3d';
+  multisampled?: boolean;
+}
+
+interface GPUBindGroupDescriptor {
+  layout: GPUBindGroupLayout;
+  entries: GPUBindGroupEntry[];
+}
+
+interface GPUBindGroupEntry {
+  binding: number;
+  resource: GPUBuffer | GPUTexture | GPUTextureView | GPUSampler;
+}
+
+interface GPUSampler {}
+
+interface GPUTextureDescriptor {
+  size: [number, number, number] | [number, number];
+  format: GPUTextureFormat;
+  usage: number;
+  sampleCount?: number;
+}
+
 interface GPUCanvasConfiguration {
   device: GPUDevice;
   format: string;
-  alphaMode?: string;
+  alphaMode?: 'opaque' | 'premultiplied' | 'unpremultiplied';
+  colorSpace?: PredefinedColorSpace | string;
+  size?: [number, number];
 }
 
 interface HTMLCanvasElement {
@@ -236,19 +352,9 @@ interface HTMLCanvasElement {
   getContext(contextId: string): CanvasRenderingContext2D | WebGLRenderingContext | GPUCanvasContext | null;
 }
 
-interface GPUBufferUsage {
-  VERTEX: number;
-  COPY_DST: number;
-}
+// 确保类型兼容性
+type GPUSupportedLimitsKeys = keyof GPUSupportedLimits;
+type GPULimitsKeys = keyof GPULimits;
 
-interface GPUQueue {}
-
-interface GPUCommandEncoder {}
-
-interface GPURenderPassEncoder {}
-
-interface GPUTexture {}
-
-interface GPUTextureView {}
-
-interface GPUBindGroupLayout {}
+// 扩展 BufferSource 类型以支持 Float32Array
+type BufferSource = ArrayBufferView | ArrayBuffer;

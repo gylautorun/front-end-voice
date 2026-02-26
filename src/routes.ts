@@ -26,6 +26,7 @@ import {
 
     SITE_MAP_WEB_GPU_BASE,
     SITE_MAP_WEB_GPU_TRIANGLE,
+    SITE_MAP_WEB_GPU_ROTATING,
 
 } from './site-map';
 
@@ -135,5 +136,10 @@ export const routes = [
         key: SITE_MAP_WEB_GPU_TRIANGLE.key,
         path: SITE_MAP_WEB_GPU_TRIANGLE.path,
         component: React.lazy(() => import('./pages/web-gpu/triangle/index')),
+    },
+    {
+        key: SITE_MAP_WEB_GPU_ROTATING.key,
+        path: SITE_MAP_WEB_GPU_ROTATING.path,
+        component: React.lazy(() => import('./pages/web-gpu/rotating/index')),
     },
 ];

@@ -180,6 +180,12 @@ export const SITE_MAP_WEB_GPU_TRIANGLE = {
     label: () => '三角形',
     path: '/web-gpu/triangle',
 };
+export const SITE_MAP_WEB_GPU_ROTATING = {
+    entry: ENTRY_MAIN,
+    key: 'web-gpu-rotating',
+    label: () => '旋转立方体',
+    path: '/web-gpu/rotating',
+};
 export const SITE_MAP_WEB_GPU_LIST = {
     entry: ENTRY_MAIN,
     key: 'web-gpu',
@@ -188,6 +194,7 @@ export const SITE_MAP_WEB_GPU_LIST = {
     children: [
         SITE_MAP_WEB_GPU_BASE,
         SITE_MAP_WEB_GPU_TRIANGLE,
+        SITE_MAP_WEB_GPU_ROTATING,
     ],
 };
 

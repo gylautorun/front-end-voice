@@ -35,6 +35,9 @@ importers:
       react-router-dom:
         specifier: ^5.3.4
         version: 5.3.4(react@18.3.1)
+      wgpu-matrix:
+        specifier: ^3.4.2
+        version: 3.4.2
     devDependencies:
       '@types/lodash-es':
         specifier: ^4.17.12
@@ -2092,6 +2095,9 @@ packages:
     peerDependenciesMeta:
       webpack-cli:
         optional: true
+
+  wgpu-matrix@3.4.2:
+    resolution: {integrity: sha512-IfZFbG7olEYBD76VCZy2TzqM57GKy3LT++AZh37tMHPPByO6R2h61zXGBZFNPi2IzxNivNi8y5dvze5PjaczjA==}
 
   which@2.0.2:
     resolution: {integrity: sha512-BLI3Tl1TW3Pvl70l3yq3Y64i+awpwXqsGBYWkkqMtnbXgrMD+yj7rhW0kuEDxzJaYXGjEW5ogapKNMEKNMjibA==}
@@ -4152,6 +4158,8 @@ snapshots:
       - '@swc/core'
       - esbuild
       - uglify-js
+
+  wgpu-matrix@3.4.2: {}
 
   which@2.0.2:
     dependencies:

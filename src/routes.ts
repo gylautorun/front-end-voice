@@ -24,6 +24,7 @@ import {
     SITE_MAP_WEBSOCKET_DEMO,
     SITE_MAP_WEBSOCKET_SHARED_CONNECTION_DEMO,
 
+    SITE_MAP_WEB_GPU_BASE,
     SITE_MAP_WEB_GPU_TRIANGLE,
 
 } from './site-map';
@@ -125,6 +126,11 @@ export const routes = [
         component: React.lazy(() => import('./pages/websocket/shared-connection-demo/index')),
     },
 
+    {
+        key: SITE_MAP_WEB_GPU_BASE.key,
+        path: SITE_MAP_WEB_GPU_BASE.path,
+        component: React.lazy(() => import('./pages/web-gpu/index/index')),
+    },
     {
         key: SITE_MAP_WEB_GPU_TRIANGLE.key,
         path: SITE_MAP_WEB_GPU_TRIANGLE.path,

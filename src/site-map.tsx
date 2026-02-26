@@ -168,6 +168,12 @@ export const SITE_MAP_WEBSOCKET_LIST = {
 };
 
 // WebGPU 示例
+export const SITE_MAP_WEB_GPU_BASE = {
+    entry: ENTRY_MAIN,
+    key: 'web-gpu-base',
+    label: () => '基础演示',
+    path: '/web-gpu/base',
+};
 export const SITE_MAP_WEB_GPU_TRIANGLE = {
     entry: ENTRY_MAIN,
     key: 'web-gpu-triangle',
@@ -180,6 +186,7 @@ export const SITE_MAP_WEB_GPU_LIST = {
     label: () => 'WebGPU 示例',
     path: '/web-gpu',
     children: [
+        SITE_MAP_WEB_GPU_BASE,
         SITE_MAP_WEB_GPU_TRIANGLE,
     ],
 };

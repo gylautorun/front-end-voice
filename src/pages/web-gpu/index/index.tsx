@@ -1,6 +1,5 @@
 import { Typography, Card, Space, Button } from 'antd';
-import { Link } from 'react-router-dom';
-import BasicWebgpuDemo from './basic-demo';
+import BasicWebgpu from './basic';
 import styles from './index.module.scss';
 
 const { Title, Paragraph } = Typography;
@@ -8,7 +7,7 @@ const { Title, Paragraph } = Typography;
 export default function WebGPUPage() {
   return (
     <div className={styles.container}>
-      <Title level={1}>WebGPU 演示</Title>
+      <Title level={1}>WebGPU 说明</Title>
       
       <Paragraph>
         WebGPU 是一种现代的图形 API，提供了对 GPU 硬件的直接访问，性能优于传统的 WebGL。
@@ -20,7 +19,7 @@ export default function WebGPUPage() {
         <Paragraph>
           一个简单的 WebGPU 演示，展示了如何初始化 WebGPU、创建渲染管线并绘制一个三角形。
         </Paragraph>
-        <BasicWebgpuDemo />
+        <BasicWebgpu />
       </Card>
 
       <Card className={styles['info-card']}>

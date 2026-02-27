@@ -25,7 +25,7 @@ export class PhoneVideoBox extends React.Component {
 
   get video() {
     return this.videoRef.current;
-  };
+  }
   get canvas() {
     return this.canvasRef.current;
   }
@@ -36,6 +36,16 @@ export class PhoneVideoBox extends React.Component {
     this.mounted();
   }
   requestAudioAccess = () => {
+      if (!navigator.mediaDevices) {
+          console.error('navigator.mediaDevices not available');
+          alert('您的浏览器不支持获取用户设备');
+          return;
+      }
+      if (!window.MediaRecorder) {
+          console.error('MediaRecorder not available');
+          alert('您的浏览器不支持录制视频');
+          return;
+      }
       navigator.mediaDevices.getUserMedia({
           audio: true,
           video: true,
@@ -44,10 +54,22 @@ export class PhoneVideoBox extends React.Component {
           this.stream = stream;
           this.bindEvents();
       }, error => {
-          alert('出错，请确保已允许浏览器获取录音权限');
+          let errorMessage = '出错，请确保已允许浏览器获取录音权限';
+          if (error.name === 'NotAllowedError') {
+              errorMessage = '权限被拒绝，请在浏览器设置中允许摄像头和麦克风权限';
+          } else if (error.name === 'NotFoundError') {
+              errorMessage = '未找到摄像头或麦克风设备';
+          } else if (error.name === 'NotReadableError') {
+              errorMessage = '摄像头或麦克风被其他应用占用';
+          }
+          alert(errorMessage);
       });
   }
   onMouseDown = () => {
+      if (!this.recorder || !this.stream) {
+          alert('请先允许浏览器获取摄像头和麦克风权限');
+          return;
+      }
       this.showVideo(true);
       this.onPreview();
       this.setState({text: '松开结束'});
@@ -58,10 +80,18 @@ export class PhoneVideoBox extends React.Component {
       this.setState({text: '按住拍视频'});
   }
   onStart = () => {
-      this.recorder.start();
+      if (this.recorder) {
+          this.recorder.start();
+      } else {
+          console.error('Recorder not initialized');
+      }
   }
   onStop = () => {
-      this.recorder.stop();
+      if (this.recorder) {
+          this.recorder.stop();
+      } else {
+          console.error('Recorder not initialized');
+      }
   }
   onPreview = () => {
       if (!this.video) return;
@@ -133,9 +163,8 @@ export class PhoneVideoBox extends React.Component {
       this.video.srcObject = null;
   }
   mounted = () => {
-      if (!this.ctx || !this.canvas) {
-        return;
-      }
+      console.log('mounted called');
+      // 不依赖 canvas 元素，直接请求权限
       this.requestAudioAccess();
   }
 

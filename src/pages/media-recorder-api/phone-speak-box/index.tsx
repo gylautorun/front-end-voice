@@ -36,6 +36,10 @@ export class PhoneSpeakBox extends React.Component {
       });
   }
   onMouseDown = () => {
+      if (!this.recorder) {
+          alert('请先允许浏览器获取麦克风权限');
+          return;
+      }
       this.onStart();
       this.setState({text: '松开结束'});
   }
@@ -44,10 +48,18 @@ export class PhoneSpeakBox extends React.Component {
       this.setState({text: '按住说话'});
   }
   onStart = () => {
-      this.recorder.start();
+      if (this.recorder) {
+          this.recorder.start();
+      } else {
+          console.error('Recorder not initialized');
+      }
   }
   onStop = () => {
-      this.recorder.stop();
+      if (this.recorder) {
+          this.recorder.stop();
+      } else {
+          console.error('Recorder not initialized');
+      }
   }
   onPlay(index: number) {
       if(!this.audio) return;
@@ -64,7 +76,7 @@ export class PhoneSpeakBox extends React.Component {
   }
   bindAudioEvent(index: number) {
       if(!this.audio) return;
-      let item = this.chunkList[index];
+      const item = this.chunkList[index];
       this.audio.onplaying = () => {
           item.wink = true;
           this.setChunkList();

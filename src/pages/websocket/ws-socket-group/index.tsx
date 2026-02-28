@@ -4,7 +4,7 @@ import style from './style.module.scss';
 import type { ChatMessage, ChannelMessage } from './types';
 
 const CHANNEL_NAME = 'socket-group-chat';
-const DEFAULT_WS_URL = '';
+const DEFAULT_WS_URL = 'ws://localhost:8080';
 
 interface ChatUser {
   id: string;
@@ -45,6 +45,13 @@ function SocketGroup() {
     const main = users.find((u) => u.isMain);
     if (main) mainUserIdRef.current = main.id;
   }, [users]);
+
+  // 当消息列表变化时，滚动到最新位置
+  useEffect(() => {
+    setTimeout(() => {
+      listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' });
+    }, 0);
+  }, [messages]);
 
   // 广播通道：多标签页互通，无需后端
   useEffect(() => {
@@ -87,6 +94,32 @@ function SocketGroup() {
     ws.onmessage = (event: MessageEvent) => {
       try {
         const data = JSON.parse(event.data as string);
+        
+        // 处理历史消息
+        if (data.type === 'history' && data.messages) {
+          const newMessages = data.messages.filter((msg: ChatMessage) => {
+            if (!msg.id || seenMessageIdsRef.current.has(msg.id)) return false;
+            seenMessageIdsRef.current.add(msg.id);
+            return true;
+          });
+          if (newMessages.length > 0) {
+            setMessages((prev) => [
+              ...prev,
+              ...newMessages.map((msg: ChatMessage) => ({
+                id: msg.id,
+                tabId: msg.tabId || 'tab-unknown',
+                userId: msg.userId,
+                nickname: msg.nickname || '?',
+                text: msg.text || '',
+                timestamp: msg.timestamp || Date.now(),
+                isLocal: (msg.tabId === tabIdRef.current && msg.userId === mainUserIdRef.current)
+              }))
+            ]);
+          }
+          return;
+        }
+        
+        // 处理普通消息
         const payload = data.payload ?? data;
         const id = payload.id ?? generateId();
         const tabId = payload.tabId ?? 'tab-unknown';

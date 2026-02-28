@@ -19,6 +19,12 @@ let connectionCount = 0;
 // 存储所有连接的客户端
 const clients = new Set();
 
+// 存储聊天消息历史
+const messageHistory = [];
+
+// 最大消息历史长度
+const MAX_HISTORY_LENGTH = 100;
+
 // 处理连接事件
 wss.on('connection', (ws, req) => {
   // 增加连接计数
@@ -36,6 +42,15 @@ wss.on('connection', (ws, req) => {
     message: `Welcome to WebSocket server! You are client ${clientId}`,
     timestamp: new Date().toISOString()
   }));
+  
+  // 发送历史消息
+  if (messageHistory.length > 0) {
+    ws.send(JSON.stringify({
+      type: 'history',
+      messages: messageHistory,
+      timestamp: new Date().toISOString()
+    }));
+  }
   
   // 广播新客户端连接
   broadcast(JSON.stringify({
@@ -55,13 +70,27 @@ wss.on('connection', (ws, req) => {
       // 处理不同类型的消息
       switch (parsedMessage.type) {
         case 'chat':
+          // 存储消息到历史
+          const chatMessage = {
+            id: parsedMessage.id,
+            tabId: parsedMessage.tabId,
+            userId: parsedMessage.userId,
+            nickname: parsedMessage.nickname,
+            text: parsedMessage.text,
+            timestamp: parsedMessage.timestamp || Date.now(),
+            type: 'chat'
+          };
+          
+          // 添加到历史记录
+          messageHistory.push(chatMessage);
+          
+          // 限制历史记录长度
+          if (messageHistory.length > MAX_HISTORY_LENGTH) {
+            messageHistory.shift();
+          }
+          
           // 广播聊天消息
-          broadcast(JSON.stringify({
-            type: 'chat',
-            sender: `Client ${clientId}`,
-            content: parsedMessage.content,
-            timestamp: new Date().toISOString()
-          }));
+          broadcast(JSON.stringify(chatMessage));
           break;
         
         case 'echo':

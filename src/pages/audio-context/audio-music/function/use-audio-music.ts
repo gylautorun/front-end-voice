@@ -55,7 +55,7 @@ export function useAudioMusic(canvas: HTMLCanvasElement | null) {
             ctx.fillRect(x, h - barHeight, barWidth, barHeight);
             x += barWidth + 3;
         }
-    }, [audioContext, analyser, ref]);
+    }, [analyser, ref]);
     const start = useCallback(() => {
         // 创建处理器，参数分别是缓存区大小、输入声道数、输出声道数
         const processor = audioContext.audioInstance.createScriptProcessor(2048, 1, 1);
@@ -64,6 +64,6 @@ export function useAudioMusic(canvas: HTMLCanvasElement | null) {
         processor.connect(audioContext.audioInstance.destination);
         processor.onaudioprocess = draw;
 
-    }, [audioContext]);
+    }, [audioContext, draw, analyser]);
     return {audioContext, analyser, start, draw, started};
 }

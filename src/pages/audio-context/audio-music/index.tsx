@@ -1,180 +1,193 @@
 import React from 'react'
 import musicLink from './春涧.mp3';
 import style from './style.module.scss';
+import { AudioContextManager } from './AudioContextManager';
 
-export class AudioMusic extends React.Component {
+interface AudioMusicState {
+  cancelVisible: boolean;
+  speaking: boolean;
+  currentAudio: 'default' | 'uploaded' | 'mic';
+  uploadedAudioPlaying: boolean;
+}
+
+export class AudioMusic extends React.Component<Record<string, never>, AudioMusicState> {
   private audioRef = React.createRef<HTMLAudioElement>();
   private canvasRef = React.createRef<HTMLCanvasElement>();
   private uploadRef = React.createRef<HTMLInputElement>();
-  audioContext!: AudioContext;
-  analyser!: AnalyserNode;
-  bufferLength!: number;
-  dataArray!: Uint8Array;
-  processor!: ScriptProcessorNode;
-  audioSource!: MediaElementAudioSourceNode;
-  streamSource!: MediaStreamAudioSourceNode;
-  state: {
-    cancelVisible: Boolean;
-    speaking: Boolean;
-  } = {
+  private audioContextManager: AudioContextManager;
+  state: AudioMusicState = {
     cancelVisible: false,
     speaking: false,
+    currentAudio: 'default',
+    uploadedAudioPlaying: false,
   };
   stream: string = '';
-  constructor(props: Record<string, any>) {
+  constructor(props: Record<string, never>) {
     super(props);
+    this.audioContextManager = new AudioContextManager(this.canvasRef);
   }
-
-  
 
   componentDidMount(): void {
   }
 
-  create = () => {
-    // 初始化音频上下文
-    // 创建AudioContext实例, 音频处理程序运行的环境
-    this.audioContext = new AudioContext();
-    // 创建分析器，用于分析音频波形
-    this.createAnalyser();
-    this.createScriptProcessor();
-    
-    // 绑定绘制函数
-    this.bindDraw();
-  };
-
-  /**
-   * 创建分析器，用于分析音频波形
-   */
-  createAnalyser() {
-    // 创建分析器, 分析音频波形
-    this.analyser = this.audioContext.createAnalyser();
-    //快速傅里叶变换参数
-    this.analyser.fftSize = 256;
-    // 频谱均衡器精度
-    this.analyser.smoothingTimeConstant = 0.8;
-    // bufferArray长度
-    this.bufferLength = this.analyser.frequencyBinCount;
-    // 创建bufferArray，用来装音频数据
-    this.dataArray = new Uint8Array(this.bufferLength);
-
-    // 分析器连接处理器，处理器连接扬声器
-    this.analyser.connect(this.audioContext.destination);
+  componentWillUnmount(): void {
+    // 销毁音频上下文管理器
+    this.audioContextManager.destroy();
   }
-  createMediaElementSource = (audio: HTMLAudioElement) => {
-    // 创建音频源节点 (音频源) => 可以对其操作(音色, 混响等)的节点
-    this.audioSource = this.audioContext.createMediaElementSource(audio);
-    // 分析器节点连接到输出设备
-    this.audioSource.connect(this.analyser);
-  };
-  createMediaStreamSource = (audio: MediaStream) => {
-    // 创建音频源节点 (音频源) => 可以对其操作(音色, 混响等)的节点
-    this.streamSource = this.audioContext.createMediaStreamSource(audio);
-    // 分析器节点连接到输出设备
-    this.streamSource.connect(this.analyser);
-  };
-  /**
-   * 处理器连接分析器, 波普分析
-   */
-  createScriptProcessor () {
-    // 创建处理器，参数分别是缓存区大小、输入声道数、输出声道数
-    this.processor = this.audioContext.createScriptProcessor(4096, 1, 1);
-    // 分析器连接处理器，处理器连接扬声器
-    this.analyser.connect(this.processor);
-    this.processor.connect(this.audioContext.destination);
-  }
-  bindDraw () {
-    this.processor.onaudioprocess = this.draw;
-  }
-  draw = () => {
-    // requestAnimationFrame 也可以
-    if (!this.canvasRef.current) {
-        return;
-    }
-    const canvas = this.canvasRef.current;
-    const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
-    const w = canvas.width;
-    const h = canvas.height;
-    const {bufferLength, dataArray} = this;
-    const barWidth = parseInt((0.5 * w / bufferLength).toString());
-    let barHeight;
-    let x = 0;
-    ctx.clearRect(0, 0, w, h);
-    // 分析器获取音频数据“切片”
-    this.analyser.getByteFrequencyData(dataArray);
-    
-    ctx.fillStyle = '#00ffdd';
-    //把每个音频“切片”画在画布上
-    for (let i = 0; i < bufferLength; i++) {
-        barHeight = parseInt((0.4 * dataArray[i]).toString());
-        ctx.fillRect(x, h - barHeight, barWidth, barHeight);
-        x += barWidth + 2;
-    }
-};
 
   handlePlay = () => {
+    // 播放默认音频
     const audio = this.audioRef.current;
     if (audio) {
-      audio.crossOrigin='anonymous';
-      if (!this.audioSource) {
-        this.create();
-        this.createMediaElementSource(audio);
+      audio.crossOrigin = 'anonymous';
+      try {
+        // 停止麦克风并暂停上传音频
+        this.audioContextManager.stopAudio('mic');
+        this.audioContextManager.pauseAudio('uploaded');
+        // 设置音频上下文并播放
+        this.audioContextManager.setupAudioContextAndPlay(audio);
+        // 更新当前音频状态
+        this.setState({
+          speaking: false,
+          currentAudio: 'default',
+          uploadedAudioPlaying: false,
+        });
+      } catch (error) {
+        console.error('Error creating audio context:', error);
       }
-      audio.play();
     }
   }
 
   handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files) {
+    if (event.target.files && event.target.files.length > 0) {
       const file = event.target.files[0];
       this.stream = URL.createObjectURL(file);
       const audio = new Audio();
       audio.src = this.stream;
+      // 暂停默认音频
+      this.audioContextManager.pauseDefaultAudio(this.audioRef);
+      
       audio.oncanplay = () => {
-        this.create();
-        this.createMediaElementSource(audio);
-        audio.play();
+        try {
+          // 停止麦克风并关闭音频上下文
+          this.audioContextManager.stopAudio('mic');
+          this.audioContextManager.closeAudioContext();
+          // 保存上传的音频实例到 map
+          this.audioContextManager.addAudioInstance('uploaded', audio);
+          // 设置音频上下文并播放
+          this.audioContextManager.setupAudioContextAndPlay(audio);
+          // 更新当前音频状态
+          this.setState({
+            cancelVisible: true,
+            speaking: false,
+            currentAudio: 'uploaded',
+            uploadedAudioPlaying: true,
+          });
+        } catch (error) {
+          console.error('Error creating audio context:', error);
+        }
       };
-      // const reader = new FileReader();
-      // reader.onload = (e: ProgressEvent<FileReader>) => {
-      //   const content = e.target?.result;
-      //   console.log(file, content);
-      // };
-      // reader.readAsText(file);
-      this.setState({
-        cancelVisible: true,
-      });
+      // 监听上传音频结束事件
+      audio.onended = () => {
+        this.setState({ currentAudio: 'default', uploadedAudioPlaying: false });
+      };
     }
-    
   };
-  onCancel = () => {
-    if (this.uploadRef.current) {
-      this.audioContext.state != 'closed' && this.audioContext.close();
-      URL.revokeObjectURL(this.stream);
-      this.uploadRef.current.value = ''; 
+
+  /** 上传音频的播放/暂停（复用同一 context，避免暂停后再播报错） */
+  handleUploadedAudioPlayPause = () => {
+    const instance = this.audioContextManager.getAudioInstance('uploaded');
+    const audio = instance?.getAudio();
+    if (!audio || !(audio instanceof HTMLAudioElement)) return;
+    if (this.state.uploadedAudioPlaying) {
+      this.audioContextManager.pauseAudio('uploaded');
+      this.setState({ uploadedAudioPlaying: false });
+    } else {
+      this.audioContextManager.stopAudio('mic');
+      this.audioContextManager.pauseDefaultAudio(this.audioRef);
+      this.audioContextManager.setupAudioContextAndPlay(audio);
       this.setState({
-        cancelVisible: false,
+        uploadedAudioPlaying: true,
+        currentAudio: 'uploaded',
+        speaking: false,
       });
     }
   };
 
-  mediaStream: MediaStream | null = null;
+  onCancel = () => {
+    if (this.uploadRef.current) {
+      // 清理音频资源
+      this.audioContextManager.cleanup();
+      // 释放上传音频实例
+      this.audioContextManager.deleteAudioInstance('uploaded');
+      // 释放 URL 对象
+      if (this.stream) {
+        URL.revokeObjectURL(this.stream);
+        this.stream = '';
+      }
+      this.uploadRef.current.value = '';
+      this.setState({
+        cancelVisible: false,
+        currentAudio: 'default',
+        uploadedAudioPlaying: false,
+      });
+    }
+  };
+
+  /**
+   * 开始说话
+   */
+  startSpeaking = () => {
+    // 先暂停默认音频和上传音频（同步执行，确保立即暂停）
+    this.audioContextManager.pauseDefaultAudio(this.audioRef);
+    this.audioContextManager.pauseAudio('uploaded');
+    this.setState({ uploadedAudioPlaying: false });
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+        try {
+          // 再次暂停上传音频，避免 getUserMedia 等待期间未暂停
+          this.audioContextManager.pauseAudio('uploaded');
+          this.audioContextManager.closeAudioContext();
+          this.audioContextManager.create();
+          this.audioContextManager.addAudioInstance('mic', stream);
+          this.audioContextManager.createMediaStreamSource(stream);
+          this.setState({
+            speaking: true,
+            currentAudio: 'mic',
+          });
+        } catch (error) {
+          console.error('Error creating audio context:', error);
+          stream.getTracks().forEach(track => track.stop());
+          this.setState({ speaking: false });
+        }
+      }).catch(error => {
+        console.error('Error getting user media:', error);
+        this.setState({ speaking: false });
+      });
+  };
+
+  /**
+   * 停止说话
+   */
+  stopSpeaking = () => {
+    // 停止麦克风并关闭音频上下文
+    this.audioContextManager.stopAudio('mic');
+    this.audioContextManager.closeAudioContext();
+    // 更新当前音频状态
+    this.setState({
+      speaking: false,
+      currentAudio: 'default',
+    });
+  };
+
+  /**
+   * 处理说话按钮点击
+   */
   handleSpeak = () => {
     if (!this.state.speaking) {
-      navigator.mediaDevices.getUserMedia({audio: true}).then(stream => {
-        this.create();
-        this.mediaStream = stream;
-        this.createMediaStreamSource(this.mediaStream);
-      });
+      this.startSpeaking();
+    } else {
+      this.stopSpeaking();
     }
-    else {
-      this.mediaStream?.getTracks().forEach(track => {
-        track.stop();
-      });
-      this.mediaStream = null;
-    }
-    this.setState({
-      speaking: !this.state.speaking,
-    });
   };
 
   render() {
@@ -190,20 +203,30 @@ export class AudioMusic extends React.Component {
           src={musicLink}
           crossOrigin={'anonymous'}
           onPlay={this.handlePlay}
-        >
-        </audio>
+        />
         <div>
           <span>{'上传音频: '}</span>
-          <input ref={this.uploadRef} type="file" onChange={this.handleFileChange}/>
-          {this.state.cancelVisible && <button onClick={this.onCancel}>{'取消'}</button>}
+          <input ref={this.uploadRef} type="file" onChange={this.handleFileChange} />
+          {this.state.cancelVisible && (
+            <>
+              <button onClick={this.onCancel}>{'取消'}</button>
+              <button onClick={this.handleUploadedAudioPlayPause}>
+                {this.state.uploadedAudioPlaying ? '暂停' : '播放'}
+              </button>
+            </>
+          )}
         </div>
         <div>
           <span>{'点击说话: '}</span>
-          <button onClick={this.handleSpeak}>{this.state.speaking ? '静音' : '说话'}</button>
+          <button
+            onClick={this.handleSpeak}
+            disabled={this.state.uploadedAudioPlaying}
+            title={this.state.uploadedAudioPlaying ? '请先暂停上传音频' : undefined}
+          >
+            {this.state.speaking ? '静音' : '说话'}
+          </button>
         </div>
       </div>
     )
   }
 }
-
-

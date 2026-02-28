@@ -3,10 +3,11 @@ import musicLink from './春涧.mp3';
 import style from './style.module.scss';
 import { AudioContextManager } from './AudioContextManager';
 
+type CurrentAudio = 'default' | 'uploaded' | 'mic';
+
 interface AudioMusicState {
-  cancelVisible: boolean;
   speaking: boolean;
-  currentAudio: 'default' | 'uploaded' | 'mic';
+  currentAudio: CurrentAudio;
   uploadedAudioPlaying: boolean;
 }
 
@@ -16,85 +17,65 @@ export class AudioMusic extends React.Component<Record<string, never>, AudioMusi
   private uploadRef = React.createRef<HTMLInputElement>();
   private audioContextManager: AudioContextManager;
   state: AudioMusicState = {
-    cancelVisible: false,
     speaking: false,
     currentAudio: 'default',
     uploadedAudioPlaying: false,
   };
+  /** 上传文件的 blob URL，有值即表示已选择上传音频，用于显示取消/播放按钮 */
   stream: string = '';
+
   constructor(props: Record<string, never>) {
     super(props);
     this.audioContextManager = new AudioContextManager(this.canvasRef);
   }
 
-  componentDidMount(): void {
-  }
-
   componentWillUnmount(): void {
-    // 销毁音频上下文管理器
     this.audioContextManager.destroy();
   }
 
-  handlePlay = () => {
-    // 播放默认音频
-    const audio = this.audioRef.current;
-    if (audio) {
-      audio.crossOrigin = 'anonymous';
-      try {
-        // 停止麦克风并暂停上传音频
-        this.audioContextManager.stopAudio('mic');
-        this.audioContextManager.pauseAudio('uploaded');
-        // 设置音频上下文并播放
-        this.audioContextManager.setupAudioContextAndPlay(audio);
-        // 更新当前音频状态
-        this.setState({
-          speaking: false,
-          currentAudio: 'default',
-          uploadedAudioPlaying: false,
-        });
-      } catch (error) {
-        console.error('Error creating audio context:', error);
-      }
-    }
+  /** 统一更新「当前音源」相关状态 */
+  private setAudioState(current: CurrentAudio): void {
+    this.setState({
+      currentAudio: current,
+      speaking: current === 'mic',
+      uploadedAudioPlaying: current === 'uploaded',
+    });
   }
 
-  handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files.length > 0) {
-      const file = event.target.files[0];
-      this.stream = URL.createObjectURL(file);
-      const audio = new Audio();
-      audio.src = this.stream;
-      // 暂停默认音频
-      this.audioContextManager.pauseDefaultAudio(this.audioRef);
-      
-      audio.oncanplay = () => {
-        try {
-          // 停止麦克风并关闭音频上下文
-          this.audioContextManager.stopAudio('mic');
-          this.audioContextManager.closeAudioContext();
-          // 保存上传的音频实例到 map
-          this.audioContextManager.addAudioInstance('uploaded', audio);
-          // 设置音频上下文并播放
-          this.audioContextManager.setupAudioContextAndPlay(audio);
-          // 更新当前音频状态
-          this.setState({
-            cancelVisible: true,
-            speaking: false,
-            currentAudio: 'uploaded',
-            uploadedAudioPlaying: true,
-          });
-        } catch (error) {
-          console.error('Error creating audio context:', error);
-        }
-      };
-      // 监听上传音频结束事件
-      audio.onended = () => {
-        this.setState({ currentAudio: 'default', uploadedAudioPlaying: false });
-      };
+  handlePlay = () => {
+    const audio = this.audioRef.current;
+    if (!audio) return;
+    audio.crossOrigin = 'anonymous';
+    try {
+      this.audioContextManager.switchToElementAndPlay(audio);
+      this.setAudioState('default');
+    } catch (error) {
+      console.error('Error creating audio context:', error);
     }
   };
 
-  /** 上传音频的播放/暂停（复用同一 context，避免暂停后再播报错） */
+  handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    this.stream = URL.createObjectURL(file);
+    const audio = new Audio();
+    audio.src = this.stream;
+    audio.oncanplay = () => {
+      try {
+        this.audioContextManager.stopAudio('mic');
+        this.audioContextManager.closeAudioContext();
+        this.audioContextManager.addAudioInstance('uploaded', audio);
+        this.audioContextManager.switchToElementAndPlay(audio, this.audioRef);
+        this.setAudioState('uploaded');
+      } catch (error) {
+        console.error('Error creating audio context:', error);
+      }
+    };
+    audio.onended = () => {
+      this.setAudioState('default');
+    };
+  };
+
   handleUploadedAudioPlayPause = () => {
     const instance = this.audioContextManager.getAudioInstance('uploaded');
     const audio = instance?.getAudio();
@@ -103,91 +84,56 @@ export class AudioMusic extends React.Component<Record<string, never>, AudioMusi
       this.audioContextManager.pauseAudio('uploaded');
       this.setState({ uploadedAudioPlaying: false });
     } else {
-      this.audioContextManager.stopAudio('mic');
-      this.audioContextManager.pauseDefaultAudio(this.audioRef);
-      this.audioContextManager.setupAudioContextAndPlay(audio);
-      this.setState({
-        uploadedAudioPlaying: true,
-        currentAudio: 'uploaded',
-        speaking: false,
-      });
+      this.audioContextManager.switchToElementAndPlay(audio, this.audioRef);
+      this.setAudioState('uploaded');
     }
   };
 
   onCancel = () => {
-    if (this.uploadRef.current) {
-      // 清理音频资源
-      this.audioContextManager.cleanup();
-      // 释放上传音频实例
-      this.audioContextManager.deleteAudioInstance('uploaded');
-      // 释放 URL 对象
-      if (this.stream) {
-        URL.revokeObjectURL(this.stream);
-        this.stream = '';
-      }
-      this.uploadRef.current.value = '';
-      this.setState({
-        cancelVisible: false,
-        currentAudio: 'default',
-        uploadedAudioPlaying: false,
-      });
+    if (!this.uploadRef.current) return;
+    this.audioContextManager.cleanup();
+    this.audioContextManager.deleteAudioInstance('uploaded');
+    if (this.stream) {
+      URL.revokeObjectURL(this.stream);
+      this.stream = '';
     }
+    this.uploadRef.current.value = '';
+    this.setAudioState('default');
   };
 
-  /**
-   * 开始说话
-   */
   startSpeaking = () => {
-    // 先暂停默认音频和上传音频（同步执行，确保立即暂停）
-    this.audioContextManager.pauseDefaultAudio(this.audioRef);
-    this.audioContextManager.pauseAudio('uploaded');
+    this.audioContextManager.pauseAllElementSources(this.audioRef);
     this.setState({ uploadedAudioPlaying: false });
-    navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+    navigator.mediaDevices
+      .getUserMedia({ audio: true })
+      .then(stream => {
         try {
-          // 再次暂停上传音频，避免 getUserMedia 等待期间未暂停
           this.audioContextManager.pauseAudio('uploaded');
           this.audioContextManager.closeAudioContext();
           this.audioContextManager.create();
           this.audioContextManager.addAudioInstance('mic', stream);
           this.audioContextManager.createMediaStreamSource(stream);
-          this.setState({
-            speaking: true,
-            currentAudio: 'mic',
-          });
+          this.setAudioState('mic');
         } catch (error) {
           console.error('Error creating audio context:', error);
           stream.getTracks().forEach(track => track.stop());
-          this.setState({ speaking: false });
+          this.setAudioState('default');
         }
-      }).catch(error => {
+      })
+      .catch(error => {
         console.error('Error getting user media:', error);
-        this.setState({ speaking: false });
+        this.setAudioState('default');
       });
   };
 
-  /**
-   * 停止说话
-   */
   stopSpeaking = () => {
-    // 停止麦克风并关闭音频上下文
     this.audioContextManager.stopAudio('mic');
     this.audioContextManager.closeAudioContext();
-    // 更新当前音频状态
-    this.setState({
-      speaking: false,
-      currentAudio: 'default',
-    });
+    this.setAudioState('default');
   };
 
-  /**
-   * 处理说话按钮点击
-   */
   handleSpeak = () => {
-    if (!this.state.speaking) {
-      this.startSpeaking();
-    } else {
-      this.stopSpeaking();
-    }
+    this.state.speaking ? this.stopSpeaking() : this.startSpeaking();
   };
 
   render() {
@@ -207,7 +153,7 @@ export class AudioMusic extends React.Component<Record<string, never>, AudioMusi
         <div>
           <span>{'上传音频: '}</span>
           <input ref={this.uploadRef} type="file" onChange={this.handleFileChange} />
-          {this.state.cancelVisible && (
+          {this.stream && (
             <>
               <button onClick={this.onCancel}>{'取消'}</button>
               <button onClick={this.handleUploadedAudioPlayPause}>

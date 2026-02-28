@@ -157,11 +157,7 @@ export class AudioContextManager {
     if (!this.analyser) return;
     this.stopDrawing();
     if (this.currentElementSource) {
-      try {
-        this.currentElementSource.disconnect();
-      } catch {
-        // ignore
-      }
+      this.disconnectNode(this.currentElementSource);
       this.currentElementSource = null;
     }
     const source = this.getOrCreateMediaElementSource(audio);
@@ -170,27 +166,29 @@ export class AudioContextManager {
     this.startDrawing();
   }
 
+  /** 安全断开节点，避免重复 disconnect 报错 */
+  private disconnectNode(node: AudioNode | null): void {
+    if (!node) return;
+    try {
+      node.disconnect();
+    } catch {
+      // ignore
+    }
+  }
+
   /**
    * 断开当前媒体元素源（不关闭 context）
    */
   disconnectMediaElementSource(): void {
     if (this.currentElementSource) {
-      try {
-        this.currentElementSource.disconnect();
-      } catch {
-        // ignore
-      }
+      this.disconnectNode(this.currentElementSource);
       this.currentElementSource = null;
     }
   }
 
   private disconnectStreamSource(): void {
     if (this.streamSource) {
-      try {
-        this.streamSource.disconnect();
-      } catch {
-        // ignore
-      }
+      this.disconnectNode(this.streamSource);
       this.streamSource = null;
     }
   }
@@ -289,23 +287,19 @@ export class AudioContextManager {
   }
 
   /**
-   * 暂停默认音频
-   * @param audioRef 音频元素引用
+   * 仅断开源与绘制，不关闭 context（用于切换源时）
    */
-  pauseDefaultAudio(audioRef: React.RefObject<HTMLAudioElement>): void {
-    const defaultAudio = audioRef.current;
-    if (defaultAudio) {
-      defaultAudio.pause();
-    }
-  }
-
-  /**
-   * 断开所有源并停止绘制（不关闭 context，同一 HTMLAudioElement 只能关联一个 MediaElementAudioSourceNode，关闭后无法再播）
-   */
-  closeAudioContext(): void {
+  disconnectAllSources(): void {
     this.disconnectMediaElementSource();
     this.disconnectStreamSource();
     this.stopDrawing();
+  }
+
+  /**
+   * 断开所有源、停止绘制并清空 canvas（不关闭 context）
+   */
+  closeAudioContext(): void {
+    this.disconnectAllSources();
     this.clearCanvas();
   }
 
@@ -322,24 +316,14 @@ export class AudioContextManager {
   }
 
   /**
-   * 仅断开源与绘制，不关闭 context（用于切换源时）
-   */
-  disconnectAllSources(): void {
-    this.disconnectMediaElementSource();
-    this.disconnectStreamSource();
-    this.stopDrawing();
-  }
-
-  /**
-   * 清理并关闭音频上下文（仅在取消上传等需要完全释放时调用）
+   * 清理（断开并清空画布，仅在取消上传等需要完全释放时调用）
    */
   cleanup(): void {
     this.closeAudioContext();
   }
 
   /**
-   * 设置音频上下文并播放音频（复用同一 context 与 element source，避免暂停后再播报错）
-   * @param audio 音频元素
+   * 设置音频上下文并播放音频（复用同一 context 与 element source）
    */
   setupAudioContextAndPlay(audio: HTMLAudioElement): void {
     try {
@@ -350,6 +334,33 @@ export class AudioContextManager {
       });
     } catch (error) {
       console.error('Error setting up audio context:', error);
+    }
+  }
+
+  /**
+   * 切换到指定音频元素并播放：先停止麦克风、暂停其他音源，再连接并播放
+   * @param audio 要播放的音频元素
+   * @param defaultAudioRef 可选，切换时需暂停的默认音频 ref（如从上传切回默认时无需传）
+   */
+  switchToElementAndPlay(
+    audio: HTMLAudioElement,
+    defaultAudioRef?: React.RefObject<HTMLAudioElement>,
+  ): void {
+    this.stopAudio('mic');
+    this.pauseAudio('uploaded');
+    if (defaultAudioRef?.current) {
+      defaultAudioRef.current.pause();
+    }
+    this.setupAudioContextAndPlay(audio);
+  }
+
+  /**
+   * 暂停所有元素类音源（默认、上传），用于切到麦克风前
+   */
+  pauseAllElementSources(defaultAudioRef?: React.RefObject<HTMLAudioElement>): void {
+    this.pauseAudio('uploaded');
+    if (defaultAudioRef?.current) {
+      defaultAudioRef.current.pause();
     }
   }
 
@@ -400,15 +411,9 @@ export class AudioContextManager {
    * 销毁音频上下文管理器（仅此处真正关闭 context）
    */
   destroy(): void {
-    this.disconnectMediaElementSource();
-    this.disconnectStreamSource();
-    this.stopDrawing();
+    this.disconnectAllSources();
     if (this.analyser) {
-      try {
-        this.analyser.disconnect();
-      } catch {
-        // ignore
-      }
+      this.disconnectNode(this.analyser);
       this.analyser = null;
     }
     if (this.audioContext && this.audioContext.state !== 'closed') {

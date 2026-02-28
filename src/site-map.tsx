@@ -1,11 +1,5 @@
 
 export const ENTRY_MAIN = 'main';
-export const SITE_MAP_SOCKET_GROUP = {
-    label: () => 'socket群聊',
-    key: 'socket-group',
-    path: '/socket-group',
-    entry: ENTRY_MAIN,
-};
 
 export const SITE_MAP_SPEECH_RECOGNITION = {
     entry: ENTRY_MAIN,
@@ -156,6 +150,19 @@ export const SITE_MAP_WEBSOCKET_SHARED_CONNECTION_DEMO = {
     label: () => '共享连接示例',
     path: '/websocket/shared-connection-demo',
 };
+export const SITE_MAP_SOCKET_GROUP = {
+    label: () => 'socket群聊',
+    key: 'socket-group',
+    path: '/websocket/socket-group',
+    entry: ENTRY_MAIN,
+};
+export const SITE_MAP_WS_SOCKET_GROUP = {
+    label: () => 'ws-socket群聊',
+    key: 'ws-socket-group',
+    path: '/websocket/ws-socket-group',
+    entry: ENTRY_MAIN,
+};
+
 export const SITE_MAP_WEBSOCKET_LIST = {
     entry: ENTRY_MAIN,
     key: 'websocket',
@@ -164,6 +171,8 @@ export const SITE_MAP_WEBSOCKET_LIST = {
     children: [
         SITE_MAP_WEBSOCKET_DEMO,
         SITE_MAP_WEBSOCKET_SHARED_CONNECTION_DEMO,
+        SITE_MAP_SOCKET_GROUP,
+        SITE_MAP_WS_SOCKET_GROUP,
     ],
 };
 
@@ -219,7 +228,6 @@ export const SITE_MAP_MAIN = {
     children: [
         SITE_MAP_SPEECH_RECOGNITION,
         SITE_MAP_SPEECH_SYNTHESIS,
-        SITE_MAP_SOCKET_GROUP,
         SITE_MAP_WEBSOCKET_LIST,
         SITE_MAP_WEB_GPU_LIST,
         SITE_MAP_MEDIA_DEVICE,

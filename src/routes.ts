@@ -2,7 +2,6 @@ import React from 'react';
 import {
     SITE_MAP_SPEECH_RECOGNITION,
     SITE_MAP_SPEECH_SYNTHESIS,
-    SITE_MAP_SOCKET_GROUP,
     SITE_MAP_MEDIA_DEVICE,
     SITE_MAP_AUDIO_CONTEXT,
     SITE_MAP_IMG_VIDEO_PREVIEW,
@@ -23,6 +22,8 @@ import {
 
     SITE_MAP_WEBSOCKET_DEMO,
     SITE_MAP_WEBSOCKET_SHARED_CONNECTION_DEMO,
+    SITE_MAP_SOCKET_GROUP,
+    SITE_MAP_WS_SOCKET_GROUP,
 
     SITE_MAP_WEB_GPU_BASE,
     SITE_MAP_WEB_GPU_TRIANGLE,
@@ -42,11 +43,6 @@ export const routes = [
         key: SITE_MAP_SPEECH_SYNTHESIS.key,
         path: SITE_MAP_SPEECH_SYNTHESIS.path,
         component: React.lazy(() => import('./pages/speech-synthesis/index')),
-    },
-    {
-        key: SITE_MAP_SOCKET_GROUP.key,
-        path: SITE_MAP_SOCKET_GROUP.path,
-        component: React.lazy(() => import('./pages/socket-group/index')),
     },
     
     {
@@ -127,6 +123,16 @@ export const routes = [
         key: SITE_MAP_WEBSOCKET_SHARED_CONNECTION_DEMO.key,
         path: SITE_MAP_WEBSOCKET_SHARED_CONNECTION_DEMO.path,
         component: React.lazy(() => import('./pages/websocket/shared-connection-demo/index')),
+    },
+    {
+        key: SITE_MAP_SOCKET_GROUP.key,
+        path: SITE_MAP_SOCKET_GROUP.path,
+        component: React.lazy(() => import('./pages/websocket/socket-group/index')),
+    },
+    {
+        key: SITE_MAP_WS_SOCKET_GROUP.key,
+        path: SITE_MAP_WS_SOCKET_GROUP.path,
+        component: React.lazy(() => import('./pages/websocket/ws-socket-group/index')),
     },
 
     {

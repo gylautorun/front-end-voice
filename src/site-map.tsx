@@ -221,6 +221,25 @@ export const SITE_MAP_WEB_GPU_LIST = {
     ],
 };
 
+
+// TensorFlow 示例
+export const SITE_MAP_TENSOR_FLOW_SMART_IMAGE = {
+    entry: ENTRY_MAIN,
+    key: 'tensor-flow-smart-image',
+    label: () => '智能图片识别',
+    path: '/tensor-flow/smart-image',
+};
+export const SITE_MAP_TENSOR_FLOW_LIST = {
+    entry: ENTRY_MAIN,
+    key: 'tensor-flow',
+    label: () => 'TensorFlow 示例',
+    path: '/tensor-flow',
+    children: [
+        SITE_MAP_TENSOR_FLOW_SMART_IMAGE,
+    ],
+};
+
+
 export const SITE_MAP_MAIN = {
     label: () => '主菜单',
     entry: ENTRY_MAIN,
@@ -239,6 +258,7 @@ export const SITE_MAP_MAIN = {
         SITE_MAP_SCROLL_ANIMATION,
         SITE_MAP_INTERSECTION_OBSERVER,
         SITE_MAP_VIRTUAL_LIST,
+        SITE_MAP_TENSOR_FLOW_LIST,
     ],
 };
 

@@ -31,6 +31,8 @@ import {
     SITE_MAP_WEB_GPU_FRACTAL_CUBE,
     SITE_MAP_WEB_GPU_COMPUTE_BOIDS,
 
+    SITE_MAP_TENSOR_FLOW_SMART_IMAGE,
+
 } from './site-map';
 
 export const routes = [
@@ -159,5 +161,11 @@ export const routes = [
         key: SITE_MAP_WEB_GPU_COMPUTE_BOIDS.key,
         path: SITE_MAP_WEB_GPU_COMPUTE_BOIDS.path,
         component: React.lazy(() => import('./pages/web-gpu/compute-boids/index')),
+    },
+
+    {
+        key: SITE_MAP_TENSOR_FLOW_SMART_IMAGE.key,
+        path: SITE_MAP_TENSOR_FLOW_SMART_IMAGE.path,
+        component: React.lazy(() => import('./pages/tensor-flow/smart-image/index')),
     },
 ];

@@ -12,6 +12,10 @@ export default defineConfig({
   server: {
     // 启用热模块替换
     hmr: true,
+    // 启动时打开浏览器
+    open: true,
+    // 监听的端口号
+    port: 9527,
     // 监听所有网络接口
     host: true,
     // 在开发服务器中处理历史模式路由

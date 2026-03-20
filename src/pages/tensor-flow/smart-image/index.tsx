@@ -152,14 +152,16 @@ export default function SmartImage() {
           flipHorizontal: false
         })
       ]);
-      console.log('poseResult', poseResult);
+      console.log('poseResult', {predictions, detections, poseResult});
       setPredictions(predictions || []);
       setDetectionResults(detections || []);
       setPoseResult(poseResult as poseNet.Pose);
       drawObjects(detections || [], imageRef.current as HTMLImageElement);
       drawPose(poseResult?.keypoints || [], imageRef.current as HTMLImageElement);
     };
-    handleModel();
+    if (imageRef.current && image) {
+      handleModel();
+    }
   }, [image, imageRef, canvasRef, canvasPoseRef]);
   // 加载模型
   useEffect(() => {

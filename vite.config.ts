@@ -21,6 +21,13 @@ export default defineConfig({
     // 在开发服务器中处理历史模式路由
     // 当请求的路径不存在时，返回 index.html
     proxy: {
+      // AI 打字机专用代理：保留 /api/sse-ai-typed 路径并转发到 SSE 服务。
+      '/api/sse-ai-typed': {
+        // 本地 Node SSE 服务地址。
+        target: 'http://localhost:8082',
+        // 将请求 Host 改为目标服务，避免开发环境 Host 校验问题。
+        changeOrigin: true,
+      },
       // 这里可以添加代理配置
       '/api': {
         target: 'http://localhost:3000',

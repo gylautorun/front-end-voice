@@ -9,7 +9,9 @@ import {
 
     SITE_WEB_WORKER_SHARE,
 
-    SITE_MAP_SSE,
+    SITE_MAP_SSE_BASE,
+    SITE_MAP_SSE_AI_TYPED,
+
     SITE_MAP_SCROLL_ANIMATION,
 
     SITE_WEB_OBSERVER_LAZY_LOAD,
@@ -74,9 +76,18 @@ export const routes = [
     },
 
     {
-        key: SITE_MAP_SSE.key,
-        path: SITE_MAP_SSE.path,
+        key: SITE_MAP_SSE_BASE.key,
+        path: SITE_MAP_SSE_BASE.path,
         component: React.lazy(() => import('./pages/sse/index')),
+    },
+    {
+        // 独立懒加载 AI 打字机页面，避免增加其他页面的首屏代码。
+        // 路由 key 与站点地图保持一致。
+        key: SITE_MAP_SSE_AI_TYPED.key,
+        // 注册浏览器访问地址。
+        path: SITE_MAP_SSE_AI_TYPED.path,
+        // 访问该路由时才加载页面模块。
+        component: React.lazy(() => import('./pages/sse/ai-typed/index')),
     },
     {
         key: SITE_MAP_SCROLL_ANIMATION.key,

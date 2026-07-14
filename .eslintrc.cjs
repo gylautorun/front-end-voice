@@ -9,6 +9,18 @@ module.exports = {
   ignorePatterns: ['dist', '.eslintrc.cjs', 'backend'],
   parser: '@typescript-eslint/parser',
   plugins: ['react-refresh'],
+  overrides: [
+    {
+      // server 使用 Node CommonJS，不能套用根配置的浏览器全局变量规则。
+      files: ['server/**/*.js'],
+      // 启用 process、require 等 Node 全局变量，并关闭浏览器全局变量。
+      env: { node: true, browser: false },
+      rules: {
+        // server/package.json 未声明 ESM，因此允许使用 CommonJS require。
+        '@typescript-eslint/no-var-requires': 'off',
+      },
+    },
+  ],
   rules: {
     'react-refresh/only-export-components': [
       'warn',

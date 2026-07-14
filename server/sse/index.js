@@ -1,6 +1,6 @@
 const http = require('http');
 const qs = require('querystring');
-const getId = require('./util-id');
+const getId = require('..utils/util-id');
 // 配置服务
 const server = http.createServer();
 

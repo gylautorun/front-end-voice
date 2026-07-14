@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const getId = require('./util-id');
+const getId = require('..utils/util-id');
 const app = express();
 app.use(cors());
 app.get('/api/sse', (req, res) => {

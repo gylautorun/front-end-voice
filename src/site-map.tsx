@@ -42,11 +42,34 @@ export const SITE_MAP_MEDIA_RECORDER = {
     label: () => 'MediaRecorder音频/视频录制',
     path: '/media-recorder-api',
 };
+
+
+export const SITE_MAP_SSE_BASE = {
+    entry: ENTRY_MAIN,
+    key: 'sse-base',
+    label: () => 'SSE',
+    path: '/sse/base',
+};
+// AI 流式打字机在侧边栏中的菜单元数据。
+export const SITE_MAP_SSE_AI_TYPED = {
+    // 页面所属入口，与现有主站菜单保持一致。
+    entry: ENTRY_MAIN,
+    // 菜单和路由使用的稳定唯一标识。
+    key: 'sse-ai-typed',
+    // 侧边栏展示名称。
+    label: () => 'AI 流式打字机',
+    // 浏览器访问路径。
+    path: '/sse/ai-typed',
+};
 export const SITE_MAP_SSE = {
     entry: ENTRY_MAIN,
     key: 'sse',
-    label: () => 'SSE',
+    label: () => 'SSE 示例',
     path: '/sse',
+    children: [
+        SITE_MAP_SSE_BASE,
+        SITE_MAP_SSE_AI_TYPED,
+    ],
 };
 
 export const SITE_MAP_SCROLL_ANIMATION = {
@@ -261,5 +284,3 @@ export const SITE_MAP_MAIN = {
         SITE_MAP_TENSOR_FLOW_LIST,
     ],
 };
-
-

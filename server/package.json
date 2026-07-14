@@ -4,7 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "sse:ai-typed": "node sse-ai-typed/app.js",
+    "test:sse-ai-typed": "node --test sse-ai-typed/*.test.js",
+    "sse": "node sse/index.js",
+    "sse:app": "node sse/app.js",
+    "test": "npm run test:sse-ai-typed"
   },
   "author": "",
   "license": "ISC",

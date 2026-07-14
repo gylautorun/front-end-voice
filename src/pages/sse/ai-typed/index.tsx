@@ -1,4 +1,6 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
+import {fetchEventSource, EventStreamContentType} from '@microsoft/fetch-event-source';
+import {Segmented} from 'antd';
 import ReactMarkdown from 'react-markdown';
 import type {Components, ExtraProps} from 'react-markdown';
 import type {ComponentPropsWithoutRef} from 'react';
@@ -17,6 +19,7 @@ import style from './style.module.scss';
 
 // 流式任务状态机：只更新提示状态，不会因重连清空已经显示的正文。
 type StreamStatus = 'idle' | 'connecting' | 'streaming' | 'reconnecting' | 'stalled' | 'done' | 'failed';
+type StreamTransport = 'native' | 'plugin';
 
 /** 服务端每次通过 SSE data 字段发送的业务分片。 */
 interface StreamChunk {
@@ -60,6 +63,8 @@ interface StreamMeta {
     connection: number;
     // 当前连接从哪个 lastSeq 之后恢复。
     resumedFrom: number;
+    // 服务端实际使用的传输实现。
+    transport?: 'native' | 'better-sse';
 }
 
 /** rehype 处理过程中使用的最小语法树结构。 */
@@ -246,6 +251,12 @@ const streamScenarios: Array<{value: StreamScenario; label: string}> = [
     {value: 'security', label: '安全清洗'},
 ];
 
+// 原生模式和插件模式并存，方便对比连接行为；业务分片协议保持一致。
+const transportOptions = [
+    {label: '原生 EventSource', value: 'native'},
+    {label: '插件 fetch SSE', value: 'plugin'},
+];
+
 export default function AiTypedSse() {
     // displayed：已经交给 ReactMarkdown 渲染的文本。
     const [displayed, setDisplayed] = useState('');
@@ -255,6 +266,8 @@ export default function AiTypedSse() {
     const [serverInterval, setServerInterval] = useState(90);
     // scenario：选择 Node 服务端生成的模拟回答类型。
     const [scenario, setScenario] = useState<StreamScenario>('comprehensive');
+    // transport：选择浏览器原生 EventSource 或 fetch-event-source 插件。
+    const [transport, setTransport] = useState<StreamTransport>('native');
     // typingSpeed：打字机每秒追加到 displayed 的目标字符数。
     const [typingSpeed, setTypingSpeed] = useState(DEFAULT_TYPING_SPEED);
     // simulateDrop：是否让首次连接在发送指定数量分片后主动断开。
@@ -268,6 +281,8 @@ export default function AiTypedSse() {
 
     // 当前 EventSource 实例。保存到 ref 可在错误、暂停或卸载时立即关闭。
     const sourceRef = useRef<EventSource | null>(null);
+    // 插件模式通过 AbortController 取消 fetch 流。
+    const pluginControllerRef = useRef<AbortController | null>(null);
     // pending：网络已收到但打字机尚未显示的字符缓冲区。
     const pendingRef = useRef<string[]>([]);
     // 保存不足一个字符的消费额度，使低速设置也能保持准确。
@@ -299,6 +314,8 @@ export default function AiTypedSse() {
     const clearConnection = useCallback(() => {
         sourceRef.current?.close();
         sourceRef.current = null;
+        pluginControllerRef.current?.abort();
+        pluginControllerRef.current = null;
         window.clearTimeout(retryTimerRef.current);
         window.clearTimeout(idleTimerRef.current);
         window.clearTimeout(firstChunkTimerRef.current);
@@ -314,6 +331,8 @@ export default function AiTypedSse() {
         if (!mountedRef.current || doneRef.current || pausedRef.current) return;
         sourceRef.current?.close();
         sourceRef.current = null;
+        pluginControllerRef.current?.abort();
+        pluginControllerRef.current = null;
         window.clearTimeout(retryTimerRef.current);
         window.clearTimeout(firstChunkTimerRef.current);
         window.clearTimeout(idleTimerRef.current);
@@ -355,82 +374,65 @@ export default function AiTypedSse() {
             if (doneRef.current || pausedRef.current) return;
             sourceRef.current?.close();
             sourceRef.current = null;
+            pluginControllerRef.current?.abort();
+            pluginControllerRef.current = null;
             setStatus('failed');
         }, TOTAL_STREAM_TIMEOUT_MS);
     }, []);
 
-    /** 创建 SSE 连接，并从 lastSeq 后的第一条分片开始接收。 */
+    /** 创建选定模式的 SSE 连接，并从 lastSeq 后的第一条分片开始接收。 */
     const connect = useCallback(() => {
         if (!messageIdRef.current || doneRef.current || pausedRef.current) return;
         sourceRef.current?.close();
+        sourceRef.current = null;
+        pluginControllerRef.current?.abort();
+        pluginControllerRef.current = null;
         setStatus(lastSeqRef.current ? 'reconnecting' : 'connecting');
 
         const params = new URLSearchParams({
-            // 服务端据此复用同一份回答缓存，而不是重新生成答案。
             messageId: messageIdRef.current,
-            // 显式传递断点，比只依赖浏览器的 Last-Event-ID 更容易控制。
             lastSeq: String(lastSeqRef.current),
-            // 演示用发送速度。
             intervalMs: String(serverInterval),
-            // 请求指定的模拟回答类型；同一 messageId 重连时服务端仍复用首次场景。
             scenario,
-            // 仅首次连接发送到第 12 个分片时模拟断流。
             disconnectAt: simulateDrop ? '12' : '0',
         });
-        const source = new EventSource(`/api/sse-ai-typed/stream?${params}`);
-        sourceRef.current = source;
-        armIdleTimeout();
-        // heartbeat 只能证明连接存活，不能代替首个业务分片。
-        window.clearTimeout(firstChunkTimerRef.current);
-        firstChunkTimerRef.current = window.setTimeout(() => {
-            if (sourceRef.current === source && !doneRef.current) {
-                setStatus('stalled');
-                scheduleReconnect();
-            }
-        }, FIRST_CHUNK_TIMEOUT_MS);
+        const endpoint = transport === 'native' ? 'stream' : 'stream-plugin';
+        const url = `/api/sse-ai-typed/${endpoint}?${params}`;
 
-        source.onopen = () => {
-            // 忽略已经被新连接替换的旧 EventSource 回调。
-            if (sourceRef.current !== source) return;
+        /** 两种连接共用的打开状态处理。 */
+        const handleOpen = () => {
             retryRef.current = 0;
             setStatus('streaming');
             armIdleTimeout();
         };
 
-        // 心跳没有正文，只负责证明链路仍然存活。
-        source.addEventListener('heartbeat', armIdleTimeout);
-        source.onmessage = (event) => {
-            if (sourceRef.current !== source) return;
-            // 收到任何合法格式的业务事件后，首包等待结束。
+        /** 两种解析器最终都把 data 字符串交给同一套业务协议校验。 */
+        const handleMessageData = (data: string) => {
+            // better-sse 首包会发送 retry 协议帧；fetch-event-source 可能将其作为空 data 消息回调。
+            // 空协议帧不属于业务分片，不能执行 JSON.parse，也不能结束首包等待计时。
+            if (!data.trim()) return;
+
             window.clearTimeout(firstChunkTimerRef.current);
             armIdleTimeout();
 
             let chunk: StreamChunk;
             try {
-                chunk = JSON.parse(event.data) as StreamChunk;
+                chunk = JSON.parse(data) as StreamChunk;
             } catch {
-                // 数据格式异常时保留当前内容，从最后合法 seq 重新拉取。
                 scheduleReconnect();
                 return;
             }
 
-            // 丢弃其他回答的分片，以及重连时可能重放的旧分片。
             if (chunk.messageId !== messageIdRef.current || chunk.seq <= lastSeqRef.current) return;
             if (chunk.seq !== lastSeqRef.current + 1) {
-                // 出现序号断层时不拼接残缺文本，立即从 lastSeq 续传。
                 scheduleReconnect();
                 return;
             }
 
             lastSeqRef.current = chunk.seq;
-            if (chunk.meta) {
-                // 首包和 done 都可能携带 meta，使用最新连接信息覆盖展示。
-                setStreamMeta(chunk.meta);
-            }
+            if (chunk.meta) setStreamMeta(chunk.meta);
             if (chunk.delta) {
-                // 网络接收只写 received 和 pending，不直接触发正文逐分片渲染。
                 receivedRef.current += chunk.delta;
-                // Array.from 按 Unicode 字符拆分，避免普通 emoji 被拆成半个代理项。
                 pendingRef.current.push(...Array.from(chunk.delta));
             }
             setMetrics((current) => ({
@@ -440,19 +442,93 @@ export default function AiTypedSse() {
             }));
 
             if (chunk.done) {
-                // 仅关闭网络；pending 会继续消费，清空后状态才变为 done。
+                // 网络完成不等于打字完成，pending 清空后才将状态更新为 done。
                 doneRef.current = true;
-                source.close();
+                sourceRef.current?.close();
                 sourceRef.current = null;
+                pluginControllerRef.current?.abort();
+                pluginControllerRef.current = null;
                 window.clearTimeout(idleTimerRef.current);
                 window.clearTimeout(totalTimerRef.current);
             }
         };
 
-        source.onerror = () => {
-            if (sourceRef.current === source && !doneRef.current) scheduleReconnect();
-        };
-    }, [armIdleTimeout, scenario, scheduleReconnect, serverInterval, simulateDrop]);
+        armIdleTimeout();
+
+        if (transport === 'native') {
+            // 原生实现保留：浏览器 EventSource 负责建立 GET 请求和解析 SSE 文本。
+            const source = new EventSource(url);
+            sourceRef.current = source;
+
+            window.clearTimeout(firstChunkTimerRef.current);
+            firstChunkTimerRef.current = window.setTimeout(() => {
+                if (sourceRef.current === source && !doneRef.current) {
+                    setStatus('stalled');
+                    scheduleReconnect();
+                }
+            }, FIRST_CHUNK_TIMEOUT_MS);
+
+            source.onopen = () => {
+                if (sourceRef.current === source) handleOpen();
+            };
+            source.addEventListener('heartbeat', armIdleTimeout);
+            source.onmessage = (event) => {
+                if (sourceRef.current === source) handleMessageData(event.data);
+            };
+            source.onerror = () => {
+                if (sourceRef.current === source && !doneRef.current) scheduleReconnect();
+            };
+            return;
+        }
+
+        // 插件实现：fetch-event-source 支持自定义 header、响应校验和 AbortSignal。
+        const controller = new AbortController();
+        pluginControllerRef.current = controller;
+
+        window.clearTimeout(firstChunkTimerRef.current);
+        firstChunkTimerRef.current = window.setTimeout(() => {
+            if (pluginControllerRef.current === controller && !doneRef.current) {
+                setStatus('stalled');
+                scheduleReconnect();
+            }
+        }, FIRST_CHUNK_TIMEOUT_MS);
+
+        void fetchEventSource(url, {
+            signal: controller.signal,
+            // 显式 header 展示 fetch 插件能力；查询参数仍作为统一协议兜底。
+            headers: {'Last-Event-ID': String(lastSeqRef.current)},
+            // 当前页面自己处理后台缓冲和 visibility 恢复，不使用插件的默认隐藏页关闭策略。
+            openWhenHidden: true,
+            async onopen(response) {
+                const contentType = response.headers.get('content-type') || '';
+                if (!response.ok || !contentType.startsWith(EventStreamContentType)) {
+                    throw new Error(`SSE 响应异常：${response.status} ${contentType}`);
+                }
+                if (pluginControllerRef.current === controller) handleOpen();
+            },
+            onmessage(message) {
+                if (pluginControllerRef.current !== controller) return;
+                if (message.event === 'heartbeat') {
+                    armIdleTimeout();
+                    return;
+                }
+                handleMessageData(message.data);
+            },
+            onclose() {
+                if (pluginControllerRef.current === controller && !doneRef.current) {
+                    scheduleReconnect();
+                }
+            },
+            onerror(error) {
+                // 抛出后停止插件内部重试，统一交给页面已有的指数退避策略。
+                throw error;
+            },
+        }).catch(() => {
+            if (pluginControllerRef.current === controller && !controller.signal.aborted && !doneRef.current) {
+                scheduleReconnect();
+            }
+        });
+    }, [armIdleTimeout, scenario, scheduleReconnect, serverInterval, simulateDrop, transport]);
     // 每次渲染同步最新版函数，让定时器和事件监听始终调用最新配置。
     connectRef.current = connect;
 
@@ -527,7 +603,14 @@ export default function AiTypedSse() {
     useEffect(() => {
         // 网络恢复或页面重新可见时，如果没有活跃连接则执行断点续传。
         const resume = () => {
-            if (!document.hidden && !doneRef.current && messageIdRef.current && !sourceRef.current && !pausedRef.current) {
+            if (
+                !document.hidden
+                && !doneRef.current
+                && messageIdRef.current
+                && !sourceRef.current
+                && !pluginControllerRef.current
+                && !pausedRef.current
+            ) {
                 connectRef.current();
             }
         };
@@ -563,9 +646,18 @@ export default function AiTypedSse() {
                     <h1>AI 流式打字机</h1>
                     <p>序号校验、断点续传与自适应缓冲，让弱网输出保持连续。</p>
                 </div>
-                <div className={`${style.status} ${style[status]}`}>
-                    {status === 'failed' || status === 'reconnecting' ? <DisconnectOutlined /> : <WifiOutlined />}
-                    {statusText[status]}
+                <div className={style.headerControls}>
+                    <Segmented
+                        size="small"
+                        options={transportOptions}
+                        value={transport}
+                        disabled={configurationLocked}
+                        onChange={(value) => setTransport(value as StreamTransport)}
+                    />
+                    <div className={`${style.status} ${style[status]}`}>
+                        {status === 'failed' || status === 'reconnecting' ? <DisconnectOutlined /> : <WifiOutlined />}
+                        {statusText[status]}
+                    </div>
                 </div>
             </header>
 
@@ -636,6 +728,7 @@ export default function AiTypedSse() {
                     <span>模型回答</span>
                     <div className={style.metrics}>
                         {streamMeta && <span>{streamMeta.scenarioLabel}</span>}
+                        <span>{streamMeta?.transport === 'better-sse' ? 'better-sse' : '原生 SSE'}</span>
                         {streamMeta && <span>连接 #{streamMeta.connection}</span>}
                         <span>收到 {metrics.received}{streamMeta ? `/${streamMeta.totalCharacters}` : ''}</span>
                         <span>显示 {metrics.displayed}</span>

@@ -1,6 +1,7 @@
 const crypto = require('node:crypto');
 const express = require('express');
 const cors = require('cors');
+const {createSession: createBetterSseSession} = require('better-sse');
 const {
     DEFAULT_SCENARIO,
     buildScenarioAnswer,
@@ -181,6 +182,8 @@ function createStreamService(options = {}) {
             connection: session.connections,
             // 当前连接从哪个已确认序号后恢复。
             resumedFrom: lastSeq,
+            // transport 便于前端和测试确认命中了原生路由。
+            transport: 'native',
         };
 
         /** 同时释放正文和心跳定时器；可被多个关闭路径重复调用。 */
@@ -234,6 +237,94 @@ function createStreamService(options = {}) {
 
         // 浏览器刷新、主动 close 或网络断开时清理连接级资源。
         req.on('close', cleanup);
+    });
+
+    /**
+     * better-sse 插件实现。保留与原生路由相同的查询参数、缓存和业务 payload，
+     * 仅将响应头、序列化、事件格式、retry 和 keep-alive 交给插件管理。
+     */
+    app.get('/api/sse-ai-typed/stream-plugin', async (req, res, next) => {
+        const messageId = String(req.query.messageId || 'demo');
+        const requestedScenario = String(req.query.scenario || DEFAULT_SCENARIO);
+        const requestedSeq = Number(req.query.lastSeq || req.get('Last-Event-ID') || 0);
+        const lastSeq = Number.isSafeInteger(requestedSeq) && requestedSeq >= 0 ? requestedSeq : 0;
+        const intervalMs = Math.min(1000, Math.max(minIntervalMs, Number(req.query.intervalMs) || 90));
+        const disconnectAt = Math.max(0, Number(req.query.disconnectAt) || 0);
+        const cachedSession = getSession(messageId, requestedScenario);
+        cachedSession.connections += 1;
+
+        let betterSession;
+        try {
+            betterSession = await createBetterSseSession(req, res, {
+                // 插件负责输出 retry 字段和注释型 keep-alive。
+                retry: 1000,
+                keepAlive: heartbeatMs,
+                // 业务所需的反缓冲响应头仍显式配置。
+                headers: {
+                    'Cache-Control': 'no-cache, no-transform',
+                    'X-Accel-Buffering': 'no',
+                },
+            });
+        } catch (error) {
+            next(error);
+            return;
+        }
+
+        let index = cachedSession.chunks.findIndex((chunk) => chunk.seq > lastSeq);
+        if (index < 0) index = cachedSession.chunks.length;
+        let closed = false;
+        let sentOnConnection = 0;
+        let streamTimer;
+
+        const streamMeta = {
+            scenario: cachedSession.scenario,
+            scenarioLabel: cachedSession.scenarioLabel,
+            contentHash: cachedSession.contentHash,
+            totalCharacters: Array.from(cachedSession.content).length,
+            totalChunks: cachedSession.chunks.length,
+            createdAt: cachedSession.createdAt,
+            connection: cachedSession.connections,
+            resumedFrom: lastSeq,
+            // transport 便于前端和测试确认命中了插件路由。
+            transport: 'better-sse',
+        };
+
+        const cleanup = () => {
+            if (closed) return;
+            closed = true;
+            if (streamTimer) clearInterval(streamTimer);
+        };
+
+        // better-sse 会在底层请求或响应关闭后发出 disconnected。
+        betterSession.on('disconnected', cleanup);
+
+        streamTimer = setInterval(() => {
+            if (closed || !betterSession.isConnected || index >= cachedSession.chunks.length) return;
+            const chunk = cachedSession.chunks[index];
+            const payload = {
+                ...chunk,
+                sentAt: new Date().toISOString(),
+                ...((sentOnConnection === 0 || chunk.done) ? {meta: streamMeta} : {}),
+                ...(chunk.done ? {finishReason: 'stop'} : {}),
+            };
+
+            // 插件负责 JSON.stringify、data/event/id 字段和事件末尾空行。
+            betterSession.push(payload, 'message', String(chunk.seq));
+            index += 1;
+            sentOnConnection += 1;
+            cachedSession.touchedAt = Date.now();
+
+            if (chunk.done) {
+                cleanup();
+                res.end();
+                return;
+            }
+
+            if (disconnectAt && cachedSession.connections === 1 && sentOnConnection === disconnectAt) {
+                cleanup();
+                res.destroy();
+            }
+        }, intervalMs);
     });
 
     // 周期扫描 touchedAt，回收超出续传窗口的会话。

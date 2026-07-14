@@ -225,6 +225,61 @@ eventBuffer += decoder.decode();
 
 生产环境建议使用成熟的 SSE parser，避免遗漏多行 `data:`、CRLF 和注释心跳等边界情况。
 
+### 3.5 原生与插件两种传输实现
+
+当前项目保留原生实现，同时增加插件实现，可在页面右上角切换：
+
+| 模式 | 前端 | Node | 路由 |
+| --- | --- | --- | --- |
+| 原生 | 浏览器 `new EventSource()` | Express `res.write()` | `/api/sse-ai-typed/stream` |
+| 插件 | `@microsoft/fetch-event-source` | `better-sse` | `/api/sse-ai-typed/stream-plugin` |
+
+原生模式代码仍然存在：
+
+```ts
+const source = new EventSource(url);
+source.onmessage = (event) => handleMessageData(event.data);
+```
+
+插件模式使用 fetch API 消费 SSE：
+
+```ts
+const controller = new AbortController();
+
+await fetchEventSource(url, {
+  signal: controller.signal,
+  headers: {'Last-Event-ID': String(lastSeq)},
+  openWhenHidden: true,
+  onmessage(message) {
+    handleMessageData(message.data);
+  },
+});
+```
+
+`@microsoft/fetch-event-source` 相比原生 `EventSource` 增加：
+
+- 自定义请求头、请求方法和请求体。
+- 使用 `AbortSignal` 精确取消连接。
+- 在 `onopen` 中检查 HTTP 状态码和 `Content-Type`。
+- 自定义错误分类和重试策略。
+- 使用 fetch 流并正确解析 UTF-8、SSE 半包和多行 data。
+
+Node 插件 `better-sse` 负责：
+
+- 标准 SSE 响应头和事件序列化。
+- `event`、`data`、`id` 和事件末尾空行。
+- `retry` 重连建议。
+- 注释型 keep-alive。
+- 连接断开事件和 JSON 序列化。
+
+插件不会替代业务断点协议。两种模式仍然共同使用：
+
+```text
+messageId + seq + lastSeq + 服务端可重放缓存
+```
+
+原因是 SSE `Last-Event-ID` 只能表达最近事件 ID，无法单独保证同一回答不会重新生成，也无法校验跨实例缓存和业务分片断层。因此插件负责连接与协议文本，现有业务层继续负责幂等、去重和续传。
+
 ## 4. 前端流式打字机
 
 ### 4.1 网络接收与页面渲染解耦
@@ -648,7 +703,7 @@ data: 1710000000000
 | [`../../../site-map.tsx`](../../../site-map.tsx) | 侧边栏菜单配置 |
 | [`../../../routes.ts`](../../../routes.ts) | 页面懒加载路由 |
 | [`../../../../vite.config.ts`](../../../../vite.config.ts) | `/api/sse-ai-typed` 开发代理 |
-| [`../../../../server/sse-ai-typed/app.js`](../../../../server/sse-ai-typed/app.js) | SSE 会话缓存、模拟数据、心跳、断流和续传 |
+| [`../../../../server/sse-ai-typed/app.js`](../../../../server/sse-ai-typed/app.js) | 原生和 better-sse 路由、会话缓存、心跳、断流和续传 |
 | [`../../../../server/sse-ai-typed/mock-data.js`](../../../../server/sse-ai-typed/mock-data.js) | 综合、Markdown 全格式、长文本、Unicode 和安全清洗模拟数据 |
 | [`../../../../server/sse-ai-typed/app.test.js`](../../../../server/sse-ai-typed/app.test.js) | Node 原生测试，真实读取 HTTP/SSE 流并验证协议 |
 
@@ -691,6 +746,7 @@ Vite 将 `/api/sse-ai-typed` 转发到本地 SSE 服务，因此前端使用相�
 
 页面提供：
 
+- 传输模式：切换原生 EventSource/Express 和 fetch-event-source/better-sse。
 - 模拟内容：切换综合 Markdown、Markdown 全格式、长文本、Unicode 和安全清洗场景。
 - 服务端分片间隔：模拟不同网络到达频率。
 - 打字机速度：实时控制每秒显示字符数。
@@ -723,7 +779,7 @@ cd server
 npm run test:sse-ai-typed
 ```
 
-测试使用 Node 内置 `node:test`，会在随机本地端口启动真实 Express 服务并读取 SSE 响应。目前包含 8 项：
+测试使用 Node 内置 `node:test`，会在随机本地端口启动真实 Express 服务并读取 SSE 响应。目前包含 10 项：
 
 | 自动化测试 | 验证内容 |
 | --- | --- |
@@ -735,6 +791,8 @@ npm run test:sse-ai-typed
 | 标准请求头续传 | `Last-Event-ID` 也能从下一条事件继续 |
 | 强制断流恢复 | 首次连接中途断开，按客户端最后收到的 seq 重连后可无损拼回全文 |
 | 心跳 | 正文发送间隔较长时收到结构化 heartbeat |
+| better-sse 完整流 | 插件路由返回相同 payload、连续 id、反缓冲响应头和 `transport` 元数据 |
+| better-sse 续传 | 插件路由从 `lastSeq + 1` 继续且不重复旧事件 |
 
 ### 9.2 已由 Node 自动测试验证
 
@@ -747,6 +805,8 @@ npm run test:sse-ai-typed
 - [x] SSE 返回 `no-cache, no-transform` 和 `X-Accel-Buffering: no`。
 - [x] 首包和 done 返回总字符数、总分片数、内容哈希、连接次数和续传位置。
 - [x] 长间隔正文期间会发送结构化 heartbeat。
+- [x] 原生 Express 和 better-sse 两套路由共享相同业务分片协议。
+- [x] better-sse 插件路由支持 `lastSeq` 断点续传。
 
 ### 9.3 前端浏览器验收
 

@@ -49,6 +49,14 @@
     font-size: 13px;
 }
 
+.headerControls {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
 .streaming, .done { color: #176b52; border-color: #9ccdbf; }
 .reconnecting, .stalled { color: #9a5a16; border-color: #e3c186; }
 .failed { color: #a33d35; border-color: #e4aaa5; }
@@ -238,6 +246,7 @@
 @media (max-width: 800px) {
     .page { padding: 20px 14px; }
     .header { flex-direction: column; gap: 14px; }
+    .headerControls { align-items: flex-start; justify-content: flex-start; }
     .header h1 { font-size: 27px; }
     .toolbar { grid-template-columns: 1fr; gap: 18px; }
     .actions button { flex: 1; }

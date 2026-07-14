@@ -187,6 +187,7 @@ test('完整 SSE 返回正确响应头、连续 id、丰富元数据和 done', a
     assert.equal(first.meta.totalCharacters, Array.from(expectedContent).length);
     assert.equal(first.meta.totalChunks, messages.length);
     assert.equal(first.meta.resumedFrom, 0);
+    assert.equal(first.meta.transport, 'native');
     assert.equal(last.type, 'done');
     assert.equal(last.done, true);
     assert.equal(last.finishReason, 'stop');
@@ -270,4 +271,36 @@ test('长间隔正文期间会发送结构化 heartbeat', async () => {
 
     assert.equal(payload.messageId, 'heartbeat');
     assert.equal(typeof payload.at, 'number');
+});
+
+test('better-sse 插件路由返回相同业务协议和插件 transport 元数据', async () => {
+    const result = await collectStream(
+        '/api/sse-ai-typed/stream-plugin?messageId=plugin-full&scenario=formats&intervalMs=1',
+    );
+    const messages = messagePayloads(result.events);
+    const expectedContent = buildScenarioAnswer('formats').content;
+
+    assert.match(result.response.headers.get('content-type'), /^text\/event-stream/);
+    assert.equal(result.response.headers.get('cache-control'), 'no-cache, no-transform');
+    assert.equal(result.response.headers.get('x-accel-buffering'), 'no');
+    messages.forEach((event, index) => assert.equal(event.id, index + 1));
+    assert.equal(messages.map(({payload}) => payload.delta).join(''), expectedContent);
+    assert.equal(messages[0].payload.meta.transport, 'better-sse');
+    assert.equal(messages.at(-1).payload.done, true);
+});
+
+test('better-sse 插件路由按 lastSeq 断点续传且不重复旧事件', async () => {
+    const messageId = 'plugin-resume';
+    await collectStream(
+        `/api/sse-ai-typed/stream-plugin?messageId=${messageId}&scenario=comprehensive&intervalMs=1`,
+    );
+    const resumed = await collectStream(
+        `/api/sse-ai-typed/stream-plugin?messageId=${messageId}&lastSeq=9&intervalMs=1`,
+    );
+    const messages = messagePayloads(resumed.events);
+
+    assert.equal(messages[0].id, 10);
+    assert.ok(messages.every((event) => event.id > 9));
+    assert.equal(messages[0].payload.meta.resumedFrom, 9);
+    assert.equal(messages[0].payload.meta.transport, 'better-sse');
 });

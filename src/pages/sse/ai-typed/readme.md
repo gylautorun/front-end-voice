@@ -134,7 +134,7 @@ data: {"messageId":"msg_001","seq":3,"delta":"","done":true}
 | `delta` | 本次新增文本，只包含增量，不包含之前已经发送的内容 |
 | `done` | 表示服务端已经没有更多分片；前端缓冲区可能还未显示完 |
 | `sentAt` | 服务端写出该分片的 ISO 时间，用于分析链路延迟 |
-| `meta` | 首包和结束包携带的流元数据，包括内容哈希、总字符数、总分片数和连接次数 |
+| `meta` | 首包和结束包携带的流元数据，包括内容哈希、总字符数、总分片数、连接次数、续传位置和传输实现 |
 | `finishReason` | 结束原因，当前模拟服务正常完成时为 `stop` |
 
 首包返回的 `meta` 示例：
@@ -148,11 +148,12 @@ data: {"messageId":"msg_001","seq":3,"delta":"","done":true}
   "totalChunks": 108,
   "createdAt": "2026-07-14T03:00:00.000Z",
   "connection": 2,
-  "resumedFrom": 12
+  "resumedFrom": 12,
+  "transport": "native"
 }
 ```
 
-重连前后的 `contentHash` 应保持一致。`connection` 会递增，`resumedFrom` 应等于客户端提交的 `lastSeq`。
+重连前后的 `contentHash` 应保持一致。`connection` 会递增，`resumedFrom` 应等于客户端提交的 `lastSeq`。`transport` 用于确认当前响应来自原生 Express 路由还是 `better-sse` 路由。
 
 ### 3.2 前端序号规则
 
@@ -202,7 +203,7 @@ const source = new EventSource(`/api/sse-ai-typed/stream?${params}`);
 
 ### 3.4 自定义 fetch 流时的 UTF-8 与半包处理
 
-当前项目使用原生 `EventSource`，浏览器会处理 UTF-8 解码和 SSE 事件边界。如果改成 `fetch + ReadableStream`，网络 chunk 边界与汉字、SSE 事件边界没有关系，必须复用同一个 `TextDecoder` 并缓存半包：
+当前项目的原生模式由 `EventSource` 处理 UTF-8 解码和 SSE 事件边界，插件模式由 `@microsoft/fetch-event-source` 处理相同边界。如果自行改成 `fetch + ReadableStream`，网络 chunk 边界与汉字、SSE 事件边界没有关系，必须复用同一个 `TextDecoder` 并缓存半包：
 
 ```ts
 const decoder = new TextDecoder();
@@ -234,6 +235,17 @@ eventBuffer += decoder.decode();
 | 原生 | 浏览器 `new EventSource()` | Express `res.write()` | `/api/sse-ai-typed/stream` |
 | 插件 | `@microsoft/fetch-event-source` | `better-sse` | `/api/sse-ai-typed/stream-plugin` |
 
+前端通过统一适配器接口隔离两种实现：
+
+```text
+use-ai-typed-stream.ts
+  -> transports/index.ts（按 transport 选择 endpoint 和 adapter）
+       -> native-event-source.ts（EventSource + close）
+       -> fetch-event-source.ts（fetchEventSource + AbortController）
+```
+
+两种适配器都只向业务 Hook 暴露 `onOpen`、`onMessage`、`onHeartbeat`、`onDisconnect` 和 `close`。序号校验、重试次数、超时与打字缓冲不会复制到传输文件中。
+
 原生模式代码仍然存在：
 
 ```ts
@@ -255,6 +267,8 @@ await fetchEventSource(url, {
   },
 });
 ```
+
+`better-sse` 建立连接时会先写出 `retry` 控制帧。当前版本的 `fetch-event-source` 可能把没有 `data` 的控制帧交给消息回调，因此插件适配器会先过滤空消息，避免对空字符串执行 `JSON.parse` 并进入无效重连循环。
 
 `@microsoft/fetch-event-source` 相比原生 `EventSource` 增加：
 
@@ -279,6 +293,29 @@ messageId + seq + lastSeq + 服务端可重放缓存
 ```
 
 原因是 SSE `Last-Event-ID` 只能表达最近事件 ID，无法单独保证同一回答不会重新生成，也无法校验跨实例缓存和业务分片断层。因此插件负责连接与协议文本，现有业务层继续负责幂等、去重和续传。
+
+### 3.6 原生 EventSource 的重连归属
+
+浏览器原生 `EventSource` 本身支持异常断线后自动重连，并会根据服务端的 `id:` 字段维护 `Last-Event-ID`。当前项目没有完全依赖这套内置重连，而是让公共 Hook 统一接管：
+
+```text
+EventSource error
+  -> native-event-source.ts 调用 onDisconnect
+  -> use-ai-typed-stream.ts 关闭旧连接
+  -> 有限次数指数退避和随机抖动
+  -> 使用相同 messageId 和最新 lastSeq 创建新 EventSource
+  -> 服务端从 seq > lastSeq 的第一条缓存分片继续
+```
+
+这样原生模式和插件模式可以共享以下策略：
+
+- 离线期间不持续重试，也不消耗重试额度。
+- 自动重试最多 5 次。
+- 同时执行首包、流空闲和总时长超时。
+- 对重复序号去重，对序号断层拒绝直接拼接。
+- 暂停、页面恢复和模拟断流都走相同续传入口。
+
+服务端仍兼容标准 `Last-Event-ID` 请求头，便于直接使用浏览器内置重连；但当前页面主动重建连接时以显式 `lastSeq` 查询参数为主。
 
 ## 4. 前端流式打字机
 
@@ -325,9 +362,9 @@ setDisplayed((previous) => previous + batch);
 
 | 常量 | 当前值 | 含义 |
 | --- | --- | --- |
-| `DEFAULT_TYPING_SPEED` | `36` | 默认每秒显示字符数 |
+| `DEFAULT_TYPING_SPEED` | `50` | 默认每秒显示字符数 |
 | `MIN_TYPING_SPEED` | `10` | 滑块最慢速度 |
-| `MAX_TYPING_SPEED` | `100` | 滑块最快速度 |
+| `MAX_TYPING_SPEED` | `500` | 滑块最快速度 |
 | `TYPING_SPEED_STEP` | `2` | 每次调整的速度步长 |
 | `TYPING_TICK_MS` | `50ms` | 缓冲区消费周期，最多每秒更新 React 20 次 |
 | `BACKLOG_SNAPSHOT_THRESHOLD` | `2000` | 超过该积压量时直接追平 |
@@ -654,6 +691,31 @@ document.addEventListener('visibilitychange', () => {
 
 生产环境如果需要多实例部署，应将缓存放到共享存储，例如 Redis，并设置 TTL；当前单进程演示不需要数据库。
 
+模拟数据属于应用层依赖，不应由通用 `utils` 反向引用。当前由 `app.js` 作为组合入口完成注入：
+
+```js
+const {DEFAULT_SCENARIO, buildScenarioAnswer, listScenarios} = require('./mock-data');
+
+createStreamServiceFactory(options, {
+  defaultScenario: DEFAULT_SCENARIO,
+  buildScenarioAnswer,
+  listScenarios,
+});
+```
+
+依赖传递方向如下：
+
+```text
+app.js
+  -> 注入 defaultScenario / buildScenarioAnswer / listScenarios
+  -> utils/service.js
+       -> utils/session-store.js（接收 defaultScenario 和 buildScenarioAnswer）
+       -> routes/*（接收 defaultScenario）
+            -> utils/stream-protocol.js（通过参数解析默认场景）
+```
+
+因此 `session-store.js` 和 `stream-protocol.js` 不需要知道 `mock-data.js` 的路径。以后改成数据库、缓存服务或真实 AI 生成器时，只需在应用组合层替换依赖，不需要修改通用缓存和协议工具。
+
 ### 7.2 SSE 响应头
 
 ```http
@@ -698,14 +760,51 @@ data: 1710000000000
 
 | 文件 | 职责 |
 | --- | --- |
-| [`index.tsx`](./index.tsx) | SSE 连接、序号校验、重连、打字缓冲、Markdown、高亮和光标 |
-| [`style.module.scss`](./style.module.scss) | 页面布局、Markdown、代码块、光标和响应式样式 |
+| [`index.tsx`](./index.tsx) | 页面入口，只组合业务 Hook 与 View |
+| [`view.tsx`](./view.tsx) | 页面 JSX、表单输入和状态指标展示 |
+| [`hooks/use-ai-typed-stream.ts`](./hooks/use-ai-typed-stream.ts) | SSE 状态机、序号校验、重连、超时和打字缓冲 |
+| [`types.ts`](./types.ts) | 前后端业务分片、元数据、状态和场景的 TypeScript 类型 |
+| [`config/index.ts`](./config/index.ts) | 超时、速度、重试次数、场景和状态文案配置 |
+| [`stream-markdown/index.tsx`](./stream-markdown/index.tsx) | Markdown、GFM、安全清洗、完成后高亮和末尾光标，组件自己维护正文 `<article>` |
+| [`stream-markdown/style.module.scss`](./stream-markdown/style.module.scss) | 仅维护 Markdown 排版、代码块、占位符、光标及其响应式样式 |
+| [`transports/native-event-source.ts`](./transports/native-event-source.ts) | 浏览器原生 `EventSource` 连接适配器 |
+| [`transports/fetch-event-source.ts`](./transports/fetch-event-source.ts) | `@microsoft/fetch-event-source` 连接适配器 |
+| [`transports/index.ts`](./transports/index.ts) | 根据模式选择前端路由和连接适配器 |
+| [`transports/types.ts`](./transports/types.ts) | 两种传输共享的生命周期回调和可关闭连接接口 |
+| [`style.module.scss`](./style.module.scss) | 仅维护页面、标题、状态、工具栏和回答面板外框样式 |
 | [`../../../site-map.tsx`](../../../site-map.tsx) | 侧边栏菜单配置 |
 | [`../../../routes.ts`](../../../routes.ts) | 页面懒加载路由 |
 | [`../../../../vite.config.ts`](../../../../vite.config.ts) | `/api/sse-ai-typed` 开发代理 |
-| [`../../../../server/sse-ai-typed/app.js`](../../../../server/sse-ai-typed/app.js) | 原生和 better-sse 路由、会话缓存、心跳、断流和续传 |
+| [`../../../../server/sse-ai-typed/app.js`](../../../../server/sse-ai-typed/app.js) | Node 启动入口、测试兼容导出以及模拟场景依赖注入 |
+| [`../../../../server/sse-ai-typed/utils/service.js`](../../../../server/sse-ai-typed/utils/service.js) | Express、中间件、场景接口和两种 SSE 路由组装，通过参数接收场景来源 |
+| [`../../../../server/sse-ai-typed/utils/session-store.js`](../../../../server/sse-ai-typed/utils/session-store.js) | `messageId` 回答缓存、内容哈希和 TTL 回收，不直接依赖模拟数据 |
+| [`../../../../server/sse-ai-typed/utils/stream-protocol.js`](../../../../server/sse-ai-typed/utils/stream-protocol.js) | 分片、请求参数、`meta`、payload 和模拟断流规则 |
+| [`../../../../server/sse-ai-typed/routes/native-sse.js`](../../../../server/sse-ai-typed/routes/native-sse.js) | Express `res.write()`、原生 SSE 格式和结构化心跳 |
+| [`../../../../server/sse-ai-typed/routes/plugin-sse.js`](../../../../server/sse-ai-typed/routes/plugin-sse.js) | `better-sse` 会话、事件推送和注释型 keep-alive |
 | [`../../../../server/sse-ai-typed/mock-data.js`](../../../../server/sse-ai-typed/mock-data.js) | 综合、Markdown 全格式、长文本、Unicode 和安全清洗模拟数据 |
 | [`../../../../server/sse-ai-typed/app.test.js`](../../../../server/sse-ai-typed/app.test.js) | Node 原生测试，真实读取 HTTP/SSE 流并验证协议 |
+
+拆分后的调用关系如下：
+
+```text
+index.tsx
+  -> hooks/use-ai-typed-stream.ts
+       -> transports/index.ts
+            -> native-event-source.ts
+            -> fetch-event-source.ts
+  -> view.tsx
+       -> stream-markdown/index.tsx
+            -> stream-markdown/style.module.scss
+       -> style.module.scss（页面 View 专属）
+
+app.js
+  -> mock-data.js（在组合入口注入场景来源）
+  -> utils/service.js
+       -> utils/session-store.js
+       -> routes/native-sse.js
+       -> routes/plugin-sse.js
+            -> utils/stream-protocol.js（两种路由共享）
+```
 
 ### 8.2 启动后端
 
@@ -779,7 +878,7 @@ cd server
 npm run test:sse-ai-typed
 ```
 
-测试使用 Node 内置 `node:test`，会在随机本地端口启动真实 Express 服务并读取 SSE 响应。目前包含 10 项：
+测试使用 Node 内置 `node:test`，会在随机本地端口启动真实 Express 服务并读取 SSE 响应。目前包含 11 项：
 
 | 自动化测试 | 验证内容 |
 | --- | --- |
@@ -793,6 +892,7 @@ npm run test:sse-ai-typed
 | 心跳 | 正文发送间隔较长时收到结构化 heartbeat |
 | better-sse 完整流 | 插件路由返回相同 payload、连续 id、反缓冲响应头和 `transport` 元数据 |
 | better-sse 续传 | 插件路由从 `lastSeq + 1` 继续且不重复旧事件 |
+| better-sse 异常断流恢复 | 插件路由强制断开后，从客户端实际确认序号恢复并无损拼回全文 |
 
 ### 9.2 已由 Node 自动测试验证
 
@@ -807,6 +907,7 @@ npm run test:sse-ai-typed
 - [x] 长间隔正文期间会发送结构化 heartbeat。
 - [x] 原生 Express 和 better-sse 两套路由共享相同业务分片协议。
 - [x] better-sse 插件路由支持 `lastSeq` 断点续传。
+- [x] better-sse 插件路由异常断流后可按客户端实际确认序号连续恢复。
 
 ### 9.3 前端浏览器验收
 

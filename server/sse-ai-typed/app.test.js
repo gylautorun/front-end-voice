@@ -304,3 +304,27 @@ test('better-sse 插件路由按 lastSeq 断点续传且不重复旧事件', asy
     assert.equal(messages[0].payload.meta.resumedFrom, 9);
     assert.equal(messages[0].payload.meta.transport, 'better-sse');
 });
+
+test('better-sse 插件路由异常断流后可从客户端确认序号连续恢复', async () => {
+    // 首次连接在第 6 个插件事件后强制断开，保留客户端已经完整解析的事件。
+    const messageId = 'plugin-forced-disconnect';
+    const interrupted = await collectStream(
+        `/api/sse-ai-typed/stream-plugin?messageId=${messageId}&scenario=unicode&intervalMs=1&disconnectAt=6`,
+        {allowPrematureClose: true},
+    );
+    const before = messagePayloads(interrupted.events);
+    // TCP 关闭时最后一次 write 可能尚未完整到达，必须使用客户端实际确认的 id。
+    const clientLastSeq = before.at(-1)?.id ?? 0;
+    const resumed = await collectStream(
+        `/api/sse-ai-typed/stream-plugin?messageId=${messageId}&lastSeq=${clientLastSeq}&intervalMs=1`,
+    );
+    const combined = [...before, ...messagePayloads(resumed.events)];
+    const expectedContent = buildScenarioAnswer('unicode').content;
+
+    assert.ok(interrupted.streamError);
+    assert.ok(clientLastSeq > 0);
+    combined.forEach((event, index) => assert.equal(event.id, index + 1));
+    assert.equal(combined.map(({payload}) => payload.delta).join(''), expectedContent);
+    assert.equal(combined.at(-1).payload.done, true);
+    assert.equal(combined.at(-1).payload.meta.transport, 'better-sse');
+});

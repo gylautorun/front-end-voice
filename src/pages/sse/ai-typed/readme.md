@@ -8,6 +8,8 @@
 - 打字速度如何与网络接收速度解耦。
 - 代码高亮如何避免影响流式渲染性能。
 
+面试表达、方案对比和常见追问见 [`interview.md`](./interview.md)。
+
 核心思路是把网络接收和页面显示拆开，并为连接补齐可续传协议：
 
 ```text
@@ -761,6 +763,7 @@ data: 1710000000000
 | 文件 | 职责 |
 | --- | --- |
 | [`index.tsx`](./index.tsx) | 页面入口，只组合业务 Hook 与 View |
+| [`interview.md`](./interview.md) | 面试回答、核心原理、实现映射、方案对比、局限和常见追问 |
 | [`view.tsx`](./view.tsx) | 页面 JSX、表单输入和状态指标展示 |
 | [`hooks/use-ai-typed-stream.ts`](./hooks/use-ai-typed-stream.ts) | SSE 状态机、序号校验、重连、超时和打字缓冲 |
 | [`config/index.ts`](./config/index.ts) | 超时、速度、重试次数、场景和状态文案配置 |

@@ -763,15 +763,15 @@ data: 1710000000000
 | [`index.tsx`](./index.tsx) | 页面入口，只组合业务 Hook 与 View |
 | [`view.tsx`](./view.tsx) | 页面 JSX、表单输入和状态指标展示 |
 | [`hooks/use-ai-typed-stream.ts`](./hooks/use-ai-typed-stream.ts) | SSE 状态机、序号校验、重连、超时和打字缓冲 |
-| [`types.ts`](./types.ts) | 前后端业务分片、元数据、状态和场景的 TypeScript 类型 |
 | [`config/index.ts`](./config/index.ts) | 超时、速度、重试次数、场景和状态文案配置 |
+| [`config/types.ts`](./config/types.ts) | 业务分片、元数据、页面状态、场景和传输模式的 TypeScript 类型 |
 | [`stream-markdown/index.tsx`](./stream-markdown/index.tsx) | Markdown、GFM、安全清洗、完成后高亮和末尾光标，组件自己维护正文 `<article>` |
 | [`stream-markdown/style.module.scss`](./stream-markdown/style.module.scss) | 仅维护 Markdown 排版、代码块、占位符、光标及其响应式样式 |
 | [`transports/native-event-source.ts`](./transports/native-event-source.ts) | 浏览器原生 `EventSource` 连接适配器 |
 | [`transports/fetch-event-source.ts`](./transports/fetch-event-source.ts) | `@microsoft/fetch-event-source` 连接适配器 |
 | [`transports/index.ts`](./transports/index.ts) | 根据模式选择前端路由和连接适配器 |
 | [`transports/types.ts`](./transports/types.ts) | 两种传输共享的生命周期回调和可关闭连接接口 |
-| [`style.module.scss`](./style.module.scss) | 仅维护页面、标题、状态、工具栏和回答面板外框样式 |
+| [`style.module.scss`](./style.module.scss) | 页面 View 专属样式，所有规则统一嵌套在 `.ai-typed-page` 根作用域内 |
 | [`../../../site-map.tsx`](../../../site-map.tsx) | 侧边栏菜单配置 |
 | [`../../../routes.ts`](../../../routes.ts) | 页面懒加载路由 |
 | [`../../../../vite.config.ts`](../../../../vite.config.ts) | `/api/sse-ai-typed` 开发代理 |
@@ -805,6 +805,22 @@ app.js
        -> routes/plugin-sse.js
             -> utils/stream-protocol.js（两种路由共享）
 ```
+
+页面 View 使用 `style.aiTypedPage`，CSS Modules 会将它映射到 `.ai-typed-page`。标题、状态、工具栏、面板和页面响应式规则全部嵌套在该根类中，避免页面样式泄漏：
+
+```scss
+.ai-typed-page {
+  .header { /* 页面标题 */ }
+  .toolbar { /* 页面控制栏 */ }
+  .streamPanel { /* 回答面板外框 */ }
+
+  @media (max-width: 800px) {
+    /* 页面 View 的窄屏规则 */
+  }
+}
+```
+
+Markdown 子组件不复用这些 class。`stream-markdown/style.module.scss` 只包含 `.markdown`、`.placeholder`、`.cursorAnchor` 和 `.cursor`，并由 `StreamMarkdown` 自己维护正文 `<article>`。因此两份 CSS Module 的节点所有权和选择器范围互不重叠。
 
 ### 8.2 启动后端
 

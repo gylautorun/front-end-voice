@@ -127,13 +127,26 @@ export const useDynamicHeightList = () => {
         }
     }, [commitScroll]);
 
-    const handleWheel = React.useCallback((event: WheelEvent) => {
-        const viewport = event.currentTarget as HTMLElement;
-        const maxScrollTop = Math.max(0, viewport.scrollHeight - viewport.clientHeight);
-        const isLeavingTop = event.deltaY < 0 && viewport.scrollTop <= 1;
-        const isLeavingBottom = event.deltaY > 0 && maxScrollTop - viewport.scrollTop <= 1;
-        if (isLeavingTop || isLeavingBottom) event.preventDefault();
-    }, []);
+    /**
+     * 动态列表之前注册了 { passive: false } 的 wheel 监听，浏览器每次滚轮输入都必须等待主线程执行，拖动滚动条则不会经过该监听。
+     * 现在：
+     *      删除非 passive wheel 监听和 preventDefault()。
+     *      保留 passive scroll 监听与 rAF 合帧更新。
+     *      边界滚动隔离继续由 overscroll-behavior: contain 处理。
+     * 
+     * 
+     * 现象指向 wheel 专属路径：拖动滚动条不会触发 wheel，而当前动态列表为阻止边界回弹注册了 { passive: false } 的滚轮监听。
+     * 浏览器每次滚轮输入都必须等待主线程处理后才能滚动，这正是拖拽正常、滚轮偶发卡顿的典型差异。
+     * 先移除这条阻塞合成线程的监听，边界隔离继续交给现有 overscroll-behavior: contain。
+     * 现在滚轮和触控板滚动都由浏览器合成线程先行处理，React 仍只在 passive scroll 回调里记录位置，并通过 rAF 每帧提交一次。
+     */
+    // const handleWheel = React.useCallback((event: WheelEvent) => {
+    //     const viewport = event.currentTarget as HTMLElement;
+    //     const maxScrollTop = Math.max(0, viewport.scrollHeight - viewport.clientHeight);
+    //     const isLeavingTop = event.deltaY < 0 && viewport.scrollTop <= 1;
+    //     const isLeavingBottom = event.deltaY > 0 && maxScrollTop - viewport.scrollTop <= 1;
+    //     if (isLeavingTop || isLeavingBottom) event.preventDefault();
+    // }, []);
 
     // 步骤 5：批量回写真实行高，并补偿视口上方高度变化引起的内容跳动。
     const measureRows = React.useCallback((entries: ResizeObserverEntry[]) => {
@@ -197,8 +210,8 @@ export const useDynamicHeightList = () => {
 
         // 滚动只读取位置，使用 passive 原生监听避免事件委托差异并保持滚动性能。
         viewport.addEventListener('scroll', handleScroll, {passive: true});
-        // wheel 需要阻止边界回弹，因此必须直接注册非 passive 原生监听。
-        viewport.addEventListener('wheel', handleWheel, {passive: false});
+        // // wheel 需要阻止边界回弹，因此必须直接注册非 passive 原生监听。
+        // viewport.addEventListener('wheel', handleWheel, {passive: false});
         rowObserverRef.current = new ResizeObserver(measureRows);
         viewportObserverRef.current = new ResizeObserver(([entry]) => {
             viewportHeightRef.current = entry.contentRect.height;
@@ -208,11 +221,11 @@ export const useDynamicHeightList = () => {
 
         return () => {
             viewport.removeEventListener('scroll', handleScroll);
-            viewport.removeEventListener('wheel', handleWheel);
+            // viewport.removeEventListener('wheel', handleWheel);
             rowObserverRef.current?.disconnect();
             viewportObserverRef.current?.disconnect();
         };
-    }, [handleScroll, handleWheel, measureRows]);
+    }, [handleScroll, measureRows, /* handleWheel */]);
 
     React.useLayoutEffect(() => {
         const observer = rowObserverRef.current;

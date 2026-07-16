@@ -20,22 +20,38 @@ class State {
     list: IListItem[] = [];
     positions: IPosition[] = [];
     itemHeight = 100; // 高度
+    dataSize = GENERATE_LIST_NUM;
     screenHeight = 0;
     start = 0;
     loading = true;
     // 即每个缓冲区只缓冲 1 * 最大可见列表项数 个元素
     bufferPercent = 1;
 
-    async created() {
+    /** 使用现有 Worker 按指定规模重新生成列表，不改变虚拟滚动计算逻辑。 */
+    async created(size = this.dataSize) {
+        const loadVersion = ++this.loadVersion;
+        this.dataSize = size;
+        this.loading = true;
+        this.start = 0;
+        this.list = [];
+        this.positions = [];
         try {
-            const { data, positions } = await generateList(GENERATE_LIST_NUM, 50, this.itemHeight);
+            const { data, positions } = await generateList(size, 50, this.itemHeight);
+            if (loadVersion !== this.loadVersion) return;
             this.list = data;
             this.positions = positions;
         } catch (error) {
+            if (loadVersion !== this.loadVersion) return;
             console.error('Failed to generate list:', error);
         } finally {
-            this.loading = false;
+            if (loadVersion === this.loadVersion) this.loading = false;
         }
+    }
+
+    /** 下拉框切换后重新执行原有数据生成流程。 */
+    changeDataSize(size: number) {
+        if (size === this.dataSize) return;
+        void this.created(size);
     }
     get total() {
         return this.list.length;
@@ -101,6 +117,9 @@ class State {
         // this.reactions.reaction(
         // );
     }
+
+    /** 标识最近一次加载，防止快速切换时旧 Worker 结果覆盖新数据。 */
+    private loadVersion = 0;
 
     dispose() {
         this.reactions.dispose();

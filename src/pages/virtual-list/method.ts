@@ -22,6 +22,15 @@ export const BROWSER_MAX_RENDERING_HEIGHT = 33554440000; // 33554440000px
  * - 超过就显示不了了
  */
 export const GENERATE_LIST_NUM = 10 * 10000;
+/** 旧版固定高与不定高虚拟列表支持切换的数据规模。 */
+export const VIRTUAL_LIST_DATA_SIZE_OPTIONS = [
+    10_000,
+    100_000,
+    200_000,
+    500_000,
+    1_000_000,
+    5_000_000,
+] as const;
 
 // 使用 Vite 5 推荐的方式创建 Worker
 export const generateList = async (num = GENERATE_LIST_NUM, repeatNum = 50, itemHeight = 150): Promise<{ data: IListItem[], positions: IPosition[] }> => {

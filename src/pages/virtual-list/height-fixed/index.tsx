@@ -1,9 +1,10 @@
-import {useCallback, useLayoutEffect, useRef, memo} from 'react';
+import {useCallback, useLayoutEffect, useRef, memo, type ChangeEvent} from 'react';
 import {runInAction} from 'mobx';
 import {observer} from 'mobx-react';
 import {store} from './state';
 import style from './style.module.scss';
 import {debounce} from 'lodash-es';
+import {VIRTUAL_LIST_DATA_SIZE_OPTIONS} from '../method';
 
 interface IListItemProps {
   id: number;
@@ -35,7 +36,7 @@ ListItem.displayName = 'ListItem';
 
 export const VirtualList = observer(() => {
   const ref = useRef<HTMLDivElement | null>(null);
-  const {visibleData, positions, listHeight, itemHeight, loading} = store;
+  const {visibleData, positions, listHeight, itemHeight, loading, dataSize} = store;
   // debounce 防抖时间 20 会有白屏, 50 比较明显
   const handleScroll = useCallback(debounce(() => {
     store.scrollEvent(ref.current);
@@ -64,33 +65,52 @@ export const VirtualList = observer(() => {
       store.dispose();
     };
   }, [updateScreenHeight]);
-  if (loading) {
-    return (
-      <div className={style.virtualListFixed} style={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
-        <div>加载中...</div>
-      </div>
-    );
-  }
+
+  /** 切换规模后回到顶部，并交给 store 复用原有 Worker 生成流程。 */
+  const handleDataSizeChange = useCallback((event: ChangeEvent<HTMLSelectElement>) => {
+    ref.current?.scrollTo({top: 0});
+    store.changeDataSize(Number(event.currentTarget.value));
+  }, []);
   
   return (
-    <div className={style.virtualListFixed} ref={ref} onScroll={handleScroll}>
-      <div className={style.content} style={{height: listHeight}}> 
-        {visibleData.map(({id, value, title, index}) => {
-          const position = positions[index];
-          return (
-            <ListItem
-              key={id}
-              id={id}
-              title={title}
-              value={value}
-              itemHeight={itemHeight}
-              top={position.top}
-              bottom={position.bottom}
-              height={position.height}
-            />
-          );
-        })}
+    <div className={style.page}>
+      <div className={style.toolbar}>
+        <label htmlFor="height-fixed-data-size">数据量</label>
+        <select
+          id="height-fixed-data-size"
+          value={dataSize}
+          onChange={handleDataSizeChange}
+        >
+          {VIRTUAL_LIST_DATA_SIZE_OPTIONS.map((size) => (
+            <option key={size} value={size}>{size.toLocaleString()}</option>
+          ))}
+        </select>
       </div>
+      {loading ? (
+        <div className={style.virtualListFixed}>
+          <div className={style.loading}>加载中...</div>
+        </div>
+      ) : (
+        <div className={style.virtualListFixed} ref={ref} onScroll={handleScroll}>
+          <div className={style.content} style={{height: listHeight}}>
+            {visibleData.map(({id, value, title, index}) => {
+              const position = positions[index];
+              return (
+                <ListItem
+                  key={id}
+                  id={id}
+                  title={title}
+                  value={value}
+                  itemHeight={itemHeight}
+                  top={position.top}
+                  bottom={position.bottom}
+                  height={position.height}
+                />
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 });

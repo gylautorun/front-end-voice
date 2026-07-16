@@ -45,6 +45,7 @@ class State {
     list: IListItem[] = [];
     positions: IPosition[] = [];
     preItemSize = 50; // 初始给一个开始高度
+    dataSize = GENERATE_LIST_NUM;
     screenHeight = 0;
     // currentOffset = 0;
     start = 0;
@@ -74,16 +75,32 @@ class State {
         this.reaction();
     }
     
-    async created() {
+    /** 使用现有 Worker 按指定规模重新生成列表，不改变动态高度算法。 */
+    async created(size = this.dataSize) {
+        const loadVersion = ++this.loadVersion;
+        this.dataSize = size;
+        this.loading = true;
+        this.start = 0;
+        this.list = [];
+        this.positions = [];
+        this.refMap.clear();
         try {
-            const { data, positions } = await generateList(GENERATE_LIST_NUM, 50, this.preItemSize);
+            const { data, positions } = await generateList(size, 50, this.preItemSize);
+            if (loadVersion !== this.loadVersion) return;
             this.list = data;
             this.positions = positions;
         } catch (error) {
+            if (loadVersion !== this.loadVersion) return;
             console.error('Failed to generate list:', error);
         } finally {
-            this.loading = false;
+            if (loadVersion === this.loadVersion) this.loading = false;
         }
+    }
+
+    /** 下拉框切换后重新执行原有数据生成流程。 */
+    changeDataSize(size: number) {
+        if (size === this.dataSize) return;
+        void this.created(size);
     }
 
     addRef(element: HTMLDivElement) {
@@ -254,6 +271,9 @@ class State {
         // this.reactions.reaction(
         // );
     }
+
+    /** 标识最近一次加载，防止快速切换时旧 Worker 结果覆盖新数据。 */
+    private loadVersion = 0;
 
     dispose() {
         this.reactions.dispose();

@@ -148,6 +148,20 @@ export const SITE_VIRTUAL_LIST_FIXED = {
     label: () => '高度固定',
     path: '/virtual-list/height-fixed',
 };
+// React 固定高度长列表性能方案。
+export const SITE_VIRTUAL_LIST_LONG_LIST_FIXED = {
+    entry: ENTRY_MAIN,
+    key: 'virtual-list-long-list-fixed',
+    label: () => '长列表不卡顿（固定高）',
+    path: '/virtual-list/long-list-ui-lag/fixed-height',
+};
+// React 不定高度长列表性能方案。
+export const SITE_VIRTUAL_LIST_LONG_LIST_DYNAMIC = {
+    entry: ENTRY_MAIN,
+    key: 'virtual-list-long-list-dynamic',
+    label: () => '长列表不卡顿（不定高）',
+    path: '/virtual-list/long-list-ui-lag/dynamic-height',
+};
 export const SITE_MAP_VIRTUAL_LIST = {
     entry: ENTRY_MAIN,
     key: 'virtual-list',
@@ -156,6 +170,8 @@ export const SITE_MAP_VIRTUAL_LIST = {
     children: [
         SITE_VIRTUAL_LIST_FIXED,
         SITE_VIRTUAL_LIST_AUTO,
+        SITE_VIRTUAL_LIST_LONG_LIST_FIXED,
+        SITE_VIRTUAL_LIST_LONG_LIST_DYNAMIC,
     ],
 };
 

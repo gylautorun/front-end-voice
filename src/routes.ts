@@ -21,6 +21,8 @@ import {
     
     SITE_VIRTUAL_LIST_AUTO,
     SITE_VIRTUAL_LIST_FIXED,
+    SITE_VIRTUAL_LIST_LONG_LIST_DYNAMIC,
+    SITE_VIRTUAL_LIST_LONG_LIST_FIXED,
 
     SITE_MAP_WEBSOCKET_DEMO,
     SITE_MAP_WEBSOCKET_SHARED_CONNECTION_DEMO,
@@ -125,6 +127,20 @@ export const routes = [
         key: SITE_VIRTUAL_LIST_AUTO.key,
         path: SITE_VIRTUAL_LIST_AUTO.path,
         component: React.lazy(() => import('./pages/virtual-list/height-auto/index')),
+    },
+    {
+        key: SITE_VIRTUAL_LIST_LONG_LIST_FIXED.key,
+        path: SITE_VIRTUAL_LIST_LONG_LIST_FIXED.path,
+        component: React.lazy(() => import(
+            './pages/virtual-list/long-list-ui-lag/fixed-height/index'
+        )),
+    },
+    {
+        key: SITE_VIRTUAL_LIST_LONG_LIST_DYNAMIC.key,
+        path: SITE_VIRTUAL_LIST_LONG_LIST_DYNAMIC.path,
+        component: React.lazy(() => import(
+            './pages/virtual-list/long-list-ui-lag/dynamic-height/index'
+        )),
     },
 
     {

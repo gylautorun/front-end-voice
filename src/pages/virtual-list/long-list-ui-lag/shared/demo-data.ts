@@ -13,6 +13,10 @@ export const DATA_SIZE_OPTIONS = [
 ] as const;
 /** 页面首次打开时默认生成的数据量。 */
 export const DEFAULT_DATA_SIZE = 100_000;
+/** 动态高度演示正文的最少行数。 */
+export const DYNAMIC_CONTENT_MIN_LINES = 3;
+/** 动态高度演示正文的最多行数。 */
+export const DYNAMIC_CONTENT_MAX_LINES = 10;
 
 /** 两种演示数据共用的稳定业务字段。 */
 export interface BaseDemoItem {
@@ -34,16 +38,18 @@ export interface DynamicDemoItem extends BaseDemoItem {
 
 /** 根据完整列表中的 0-based 索引即时创建一条固定高度数据。 */
 export const createFixedItem = (index: number): FixedDemoItem => ({
-        id: index + 1,
-        title: `业务记录 ${String(index + 1).padStart(6, '0')}`,
-        summary: `稳定行高与按需渲染，当前数据索引为 ${index}`,
+    id: index + 1,
+    title: `业务记录 ${String(index + 1).padStart(6, '0')}`,
+    summary: `稳定行高与按需渲染，当前数据索引为 ${index}`,
 });
 
 /** 根据完整列表中的 0-based 索引即时创建一条不定高度数据。 */
 export const createDynamicItem = (index: number): DynamicDemoItem => ({
-        id: index + 1,
-        title: `动态高度记录 ${String(index + 1).padStart(6, '0')}`,
-        lineCount: 3 + ((index * 5) % 8),
+    id: index + 1,
+    title: `动态高度记录 ${String(index + 1).padStart(6, '0')}`,
+    lineCount: DYNAMIC_CONTENT_MIN_LINES + (
+        (index * 5) % (DYNAMIC_CONTENT_MAX_LINES - DYNAMIC_CONTENT_MIN_LINES + 1)
+    ),
 });
 
 /** 只生成当前虚拟窗口所需的数据，内存不随逻辑总量增长。 */

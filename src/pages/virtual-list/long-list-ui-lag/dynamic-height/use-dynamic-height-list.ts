@@ -1,6 +1,7 @@
 import React from 'react';
 import {
     DynamicHeightVirtualizer,
+    estimateItemHeight,
     getCompressedScrollMetrics,
     getPhysicalRenderOffset,
     toLogicalScrollTop,
@@ -11,11 +12,30 @@ import {
     createDataRange,
     createDynamicItem,
     DEFAULT_DATA_SIZE,
+    DYNAMIC_CONTENT_MAX_LINES,
+    DYNAMIC_CONTENT_MIN_LINES,
     type DynamicDemoItem,
 } from '../shared/demo-data';
 
-/** 3 至 10 行内容在当前样式下使用的中位预估高度。 */
-const ESTIMATED_ITEM_HEIGHT = 205;
+/** 根据当前行样式和 3～10 行内容分布计算未测量项目的代表性高度。 */
+const ESTIMATED_ITEM_HEIGHT = estimateItemHeight({
+    // .dynamicRow 上下 padding 均为 16px。
+    verticalPadding: 16 * 2,
+    // h3 显式使用 17px 行高。
+    titleLineHeight: 17,
+    // h3 与正文之间的 margin-bottom。
+    titleMarginBottom: 7,
+    // 演示数据均匀分布在 3～10 行，使用平均行数作为总高度基线。
+    expectedContentLines: (
+        DYNAMIC_CONTENT_MIN_LINES + DYNAMIC_CONTENT_MAX_LINES
+    ) / 2,
+    // 正文 CSS line-height。
+    contentLineHeight: 22,
+    // 每个项目只有 1px 下边框。
+    borderHeight: 1,
+    // 吸收字体取整、浏览器缩放和轻微布局差异。
+    safetyBuffer: 5,
+});
 /** 不定高度列表按像素预渲染，避免高低差异让条数缓冲失真。 */
 const OVERSCAN_PX = 600;
 /** 低于浏览器单元素高度上限的安全物理滚动高度。 */

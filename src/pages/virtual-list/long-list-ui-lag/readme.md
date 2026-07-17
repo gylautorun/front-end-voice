@@ -18,6 +18,7 @@ long-list-ui-lag/
 
 - `FixedHeightVirtualizer`：通过除法以 O(1) 计算渲染区间和偏移。
 - `DynamicHeightVirtualizer`：使用预估高度和稀疏 Fenwick Tree，以 O(log n) 更新高度、查询累计偏移和定位项目。
+- `estimateItemHeight`：根据内边距、标题、预计正文行数、行高和边框计算未测量项目的初始基线。
 - `scroll-coordinate`：负责百万级列表的物理/逻辑滚动坐标压缩及渲染偏移换算。
 
 ## React 层实现

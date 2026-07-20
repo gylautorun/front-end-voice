@@ -12,6 +12,8 @@ export interface ItemHeightEstimateOptions {
     contentLineHeight: number;
     /** 项目上下边框高度之和，单位为 px。 */
     borderHeight?: number;
+    /** 按出现概率折算后的媒体区域平均占位高度，包含媒体与正文间距，单位为 px。 */
+    expectedMediaBlockHeight?: number;
     /** 为字体取整、缩放和轻微布局误差保留的高度。 */
     safetyBuffer?: number;
 }
@@ -23,7 +25,8 @@ export interface ItemHeightEstimateOptions {
  *
  * 计算公式：
  * `verticalPadding + titleLineHeight + titleMarginBottom
- * + expectedContentLines * contentLineHeight + borderHeight + safetyBuffer`。
+ * + expectedContentLines * contentLineHeight + borderHeight
+ * + expectedMediaBlockHeight + safetyBuffer`。
  *
  * @param options 影响单个列表项预估高度的布局参数。
  * @param options.verticalPadding 项目上、下内边距之和，单位为 px。例如上下各 16px 时传入 32。
@@ -32,6 +35,7 @@ export interface ItemHeightEstimateOptions {
  * @param options.expectedContentLines 预计正文行数，可使用样本平均值或截尾平均值，例如 6.5。
  * @param options.contentLineHeight 正文单行的 CSS `line-height`，单位为 px。
  * @param options.borderHeight 项目上、下边框高度之和，单位为 px；未传时按 0 计算。
+ * @param options.expectedMediaBlockHeight 按图片出现概率折算后的平均媒体占位，未传时按 0 计算。
  * @param options.safetyBuffer 字体取整、缩放等误差的预留高度，单位为 px；未传时按 0 计算。
  * @returns 向上取整后的代表性预估高度，单位为 px。
  * @throws {RangeError} 任一参数不是有限数字或小于 0 时抛出。
@@ -45,14 +49,16 @@ export interface ItemHeightEstimateOptions {
  *     expectedContentLines: 6.5,
  *     contentLineHeight: 22,
  *     borderHeight: 1,
+ *     expectedMediaBlockHeight: 48,
  *     safetyBuffer: 5,
- * }); // 205
+ * }); // 253
  * ```
  */
 export const estimateItemHeight = (options: ItemHeightEstimateOptions): number => {
     const normalizedOptions = {
         ...options,
         borderHeight: options.borderHeight ?? 0,
+        expectedMediaBlockHeight: options.expectedMediaBlockHeight ?? 0,
         safetyBuffer: options.safetyBuffer ?? 0,
     };
     const values = Object.entries(normalizedOptions);
@@ -68,6 +74,7 @@ export const estimateItemHeight = (options: ItemHeightEstimateOptions): number =
         + options.titleMarginBottom
         + options.expectedContentLines * options.contentLineHeight
         + normalizedOptions.borderHeight
+        + normalizedOptions.expectedMediaBlockHeight
         + normalizedOptions.safetyBuffer,
     );
 };

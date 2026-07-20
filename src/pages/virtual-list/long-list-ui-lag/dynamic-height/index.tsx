@@ -31,6 +31,20 @@ const DynamicRow = React.memo(({index, item, selected, onToggle}: DynamicRowProp
                     </span>
                 ))}
             </p>
+            {item.image && (
+                <img
+                    className={style.dynamicImage}
+                    src={item.image.src}
+                    alt={item.image.alt}
+                    width={item.image.layout === 'dimensions' ? item.image.width : undefined}
+                    height={item.image.layout === 'dimensions' ? item.image.height : undefined}
+                    style={item.image.layout === 'aspect-ratio' ? {
+                        aspectRatio: item.image.aspectRatio,
+                    } : undefined}
+                    loading="lazy"
+                    decoding="async"
+                />
+            )}
         </div>
         <button
             type="button"
@@ -74,7 +88,7 @@ export const DynamicHeightLongList = () => {
                     onChange={list.changeDataSize}
                 />
                 <span className={style.toolbarHint}>
-                    每条记录包含 3 到 10 行内容，行高由实际 DOM 测量决定
+                    每条记录包含 3 到 10 行内容，图片使用固有宽高或 aspect-ratio 预留空间
                 </span>
                 <button type="button" title="回到列表顶部" onClick={list.scrollToTop}>
                     <ArrowUpOutlined aria-hidden />

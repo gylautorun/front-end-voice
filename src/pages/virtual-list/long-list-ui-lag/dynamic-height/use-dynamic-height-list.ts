@@ -14,6 +14,8 @@ import {
     DEFAULT_DATA_SIZE,
     DYNAMIC_CONTENT_MAX_LINES,
     DYNAMIC_CONTENT_MIN_LINES,
+    DYNAMIC_IMAGE_HEIGHT,
+    DYNAMIC_IMAGE_INTERVAL,
     type DynamicDemoItem,
 } from '../shared/demo-data';
 
@@ -33,6 +35,10 @@ const ESTIMATED_ITEM_HEIGHT = estimateItemHeight({
     contentLineHeight: 22,
     // 每个项目只有 1px 下边框。
     borderHeight: 1,
+    // 每 4 条有 1 张 180px 图片，图片与正文间距为 12px：25% × 192px = 48px。
+    expectedMediaBlockHeight: (
+        DYNAMIC_IMAGE_HEIGHT + 12
+    ) / DYNAMIC_IMAGE_INTERVAL,
     // 吸收字体取整、浏览器缩放和轻微布局差异。
     safetyBuffer: 5,
 });

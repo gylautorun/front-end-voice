@@ -224,6 +224,17 @@
     }
 }
 
+.dynamicImage {
+    display: block;
+    width: 320px;
+    max-width: 100%;
+    height: auto;
+    margin-top: 12px;
+    border-radius: 4px;
+    object-fit: cover;
+    background: #e8ebef;
+}
+
 .dynamicSelect {
     align-self: center;
     width: 72px;

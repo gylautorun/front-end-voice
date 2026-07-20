@@ -55,26 +55,43 @@ export interface ItemHeightEstimateOptions {
  * ```
  */
 export const estimateItemHeight = (options: ItemHeightEstimateOptions): number => {
+    // 保留全部必填参数，并为三个可选参数补上 0，便于统一校验和求和。
     const normalizedOptions = {
+        // 展开调用方传入的全部布局参数。
         ...options,
+        // 没有边框时不增加额外高度。
         borderHeight: options.borderHeight ?? 0,
+        // 没有图片或其他媒体时，平均媒体占位按 0 计算。
         expectedMediaBlockHeight: options.expectedMediaBlockHeight ?? 0,
+        // 调用方未设置安全余量时不做额外补偿。
         safetyBuffer: options.safetyBuffer ?? 0,
     };
+    // 转换为 [参数名, 参数值] 列表，使所有字段共用同一套校验逻辑。
     const values = Object.entries(normalizedOptions);
+    // 逐个检查必填字段和已归一化的可选字段。
     values.forEach(([name, value]) => {
+        // 高度组成项只接受非负有限数字，0 允许表示该部分不存在。
         if (!Number.isFinite(value) || value < 0) {
+            // 在错误中包含参数名，方便调用方快速定位错误配置。
             throw new RangeError(`${name} must be a non-negative finite number`);
         }
     });
 
+    // 将各布局组成项相加，并向上取整得到可安全覆盖小数像素的统一预估高度。
     return Math.ceil(
+        // 加入项目上、下内边距。
         options.verticalPadding
+        // 加入单行标题占用的高度。
         + options.titleLineHeight
+        // 加入标题与正文之间的垂直间距。
         + options.titleMarginBottom
+        // 用预计正文行数乘单行行高，得到正文的平均占位。
         + options.expectedContentLines * options.contentLineHeight
+        // 加入项目上、下边框的总高度。
         + normalizedOptions.borderHeight
+        // 加入按出现概率折算后的图片或其他媒体平均占位。
         + normalizedOptions.expectedMediaBlockHeight
+        // 最后加入字体取整、缩放和轻微布局误差的安全余量。
         + normalizedOptions.safetyBuffer,
     );
 };

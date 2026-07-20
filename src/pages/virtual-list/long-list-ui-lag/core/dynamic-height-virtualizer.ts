@@ -6,6 +6,8 @@ import type {VirtualRange} from './types';
  *
  * 未测量项目先使用预估高度；DOM 挂载后写入实测高度。Fenwick Tree 让高度
  * 修正、累计偏移查询和滚动位置定位都保持 O(log n)。
+ *
+ * @see ./fenwick-tree.md Fenwick Tree 原理、手算过程及本项目稀疏实现说明。
  */
 export class DynamicHeightVirtualizer {
     /** 完整列表的逻辑项目数量，不创建同等长度的数组。 */

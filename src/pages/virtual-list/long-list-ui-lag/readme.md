@@ -259,6 +259,9 @@ DOM 未挂载时无法读取真实高度，但首次渲染前已经需要计算�
 Tree 可以将单项更新和前缀查询降为 O(log n)，并通过 binary lifting 在 O(log n) 内根据滚动偏移
 定位项目。
 
+完整的 lowbit 推导、节点覆盖范围、更新/查询路径、binary lifting 手算和稀疏差值模型，参见
+[core/fenwick-tree.md](./core/fenwick-tree.md)。
+
 本实现没有创建长度为 `itemCount` 的树数组，而只保存相对统一预估高度的差值：
 
 ```text

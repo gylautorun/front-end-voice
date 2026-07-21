@@ -1,5 +1,5 @@
 /** 引入 React Hook API 和 React UIEvent 类型。 */
-import React from 'react';
+import React, {useState, useRef, useMemo, useCallback, useLayoutEffect, useEffect} from 'react';
 /** 引入框架无关的固定高区间模型与超长列表坐标换算函数。 */
 import {
     FixedHeightVirtualizer,
@@ -28,34 +28,34 @@ const virtualizer = new FixedHeightVirtualizer(FIXED_ITEM_HEIGHT);
 /** 固定高度页面的 React 状态适配层；区间计算仍由纯 TypeScript 核心完成。 */
 export const useFixedHeightList = () => {
     // 步骤 1：只保存逻辑总数，可见项目稍后按索引即时生成。
-    const [itemCount, setItemCount] = React.useState(DEFAULT_DATA_SIZE);
+    const [itemCount, setItemCount] = useState(DEFAULT_DATA_SIZE);
 
     // 步骤 2：分别维护浏览器物理位置和完整列表逻辑位置。
     // 保存滚动容器的可见高度，用于计算当前能容纳多少条固定高记录。
-    const [viewportHeight, setViewportHeight] = React.useState(0);
+    const [viewportHeight, setViewportHeight] = useState(0);
     // 保存浏览器实际 scrollTop，用于把可见块放在安全的物理坐标附近。
-    const [physicalScrollTop, setPhysicalScrollTop] = React.useState(0);
+    const [physicalScrollTop, setPhysicalScrollTop] = useState(0);
     // 保存映射后的完整列表 scrollTop，区间模型始终使用这套逻辑坐标。
-    const [logicalScrollTop, setLogicalScrollTop] = React.useState(0);
+    const [logicalScrollTop, setLogicalScrollTop] = useState(0);
     // 保存当前前后缓冲条数，滚动越快该值越接近 MAX_OVERSCAN。
-    const [overscan, setOverscan] = React.useState(MIN_OVERSCAN);
+    const [overscan, setOverscan] = useState(MIN_OVERSCAN);
     // 使用稳定业务 id 记录选择状态，使虚拟行卸载后仍能恢复选中结果。
-    const [selectedIds, setSelectedIds] = React.useState<Set<number>>(() => new Set());
+    const [selectedIds, setSelectedIds] = useState<Set<number>>(() => new Set());
     // 指向真正产生滚动条的 section，供尺寸观察和命令式滚动使用。
-    const viewportRef = React.useRef<HTMLElement>(null);
+    const viewportRef = useRef<HTMLElement>(null);
 
     // 步骤 3：高频 scroll 事件先写 ref，同一绘制帧最多提交一次 React 更新。
     // 保存当前待执行的 requestAnimationFrame id，0 表示本帧尚未预约提交。
-    const frameIdRef = React.useRef(0);
+    const frameIdRef = useRef(0);
     // 保存最新物理位置，后续滚动事件可以覆盖旧值而不触发渲染。
-    const latestPhysicalScrollTopRef = React.useRef(0);
+    const latestPhysicalScrollTopRef = useRef(0);
     // 保存最新逻辑位置，rAF 回调只提交一帧内最后一次结果。
-    const latestLogicalScrollTopRef = React.useRef(0);
+    const latestLogicalScrollTopRef = useRef(0);
     // 保存上一帧逻辑位置，用于计算本帧滚动距离和动态缓冲数量。
-    const previousLogicalScrollTopRef = React.useRef(0);
+    const previousLogicalScrollTopRef = useRef(0);
 
     // 只在影响窗口的状态变化时重新运行 O(1) 固定高区间计算。
-    const range = React.useMemo(() => virtualizer.getRange({
+    const range = useMemo(() => virtualizer.getRange({
         // 使用完整列表逻辑坐标定位第一条可见记录。
         scrollTop: logicalScrollTop,
         // 视口高度决定固定行高下的可见记录数量。
@@ -67,7 +67,7 @@ export const useFixedHeightList = () => {
     }), [itemCount, logicalScrollTop, overscan, viewportHeight]);
 
     // 根据逻辑总高度计算浏览器安全的 spacer 高度和物理/逻辑压缩比例。
-    const scrollMetrics = React.useMemo(() => getCompressedScrollMetrics({
+    const scrollMetrics = useMemo(() => getCompressedScrollMetrics({
         // 固定高模型返回的完整逻辑列表高度。
         logicalTotalHeight: range.totalHeight,
         // 扣除视口后才能得到两套坐标各自的可滚动距离。
@@ -87,7 +87,7 @@ export const useFixedHeightList = () => {
     });
 
     // 只为当前虚拟窗口创建少量业务对象，逻辑总量变化不会创建完整数组。
-    const renderedItems = React.useMemo(
+    const renderedItems = useMemo(
         // endIndex 是开区间上界，可以直接传给公共范围生成器。
         () => createDataRange(range.startIndex, range.endIndex, createFixedItem),
         // 窗口边界不变时复用对象数组，帮助 React.memo 跳过无关行更新。
@@ -96,11 +96,11 @@ export const useFixedHeightList = () => {
 
     // 以下三个 ref 让稳定的滚动回调读取最新状态，而不必随每次渲染重新创建。
     // 保存最新视口高度，供滚动事件计算最大逻辑位置。
-    const viewportHeightRef = React.useRef(viewportHeight);
+    const viewportHeightRef = useRef(viewportHeight);
     // 保存最新虚拟区间，供滚动事件读取完整逻辑总高度。
-    const rangeRef = React.useRef(range);
+    const rangeRef = useRef(range);
     // 保存最新坐标压缩比例，供物理位置映射逻辑位置。
-    const scrollMetricsRef = React.useRef(scrollMetrics);
+    const scrollMetricsRef = useRef(scrollMetrics);
     // 每次渲染同步 ref；赋值本身不会触发额外 React 更新。
     viewportHeightRef.current = viewportHeight;
     // 同步当前区间，避免 handleScroll 捕获旧 totalHeight。
@@ -109,7 +109,7 @@ export const useFixedHeightList = () => {
     scrollMetricsRef.current = scrollMetrics;
 
     // 在浏览器下一次绘制前，把一帧内最后一次滚动位置统一提交给 React。
-    const commitScroll = React.useCallback(() => {
+    const commitScroll = useCallback(() => {
         // 清空预约标记，使下一帧的新滚动可以再次申请 rAF。
         frameIdRef.current = 0;
         // 读取 ref 中一帧内最后一次逻辑位置，而不是处理已经过时的中间事件。
@@ -132,7 +132,7 @@ export const useFixedHeightList = () => {
     }, []);
 
     // React onScroll 只记录最新坐标并预约 rAF，不在高频事件中直接生成数据。
-    const handleScroll = React.useCallback((event: React.UIEvent<HTMLElement>) => {
+    const handleScroll = useCallback((event: React.UIEvent<HTMLElement>) => {
         // currentTarget 始终是绑定 onScroll 的滚动容器。
         const viewport = event.currentTarget;
         // 读取浏览器实际物理滚动位置。
@@ -161,7 +161,7 @@ export const useFixedHeightList = () => {
     }, [commitScroll]);
 
     // 步骤 4：只观察滚动容器尺寸，窗口和侧栏变化后自动重算可见行数。
-    React.useLayoutEffect(() => {
+    useLayoutEffect(() => {
         // 布局阶段读取已经挂载的滚动容器 DOM。
         const viewport = viewportRef.current;
         // ref 尚未绑定时不创建观察器，也不需要清理函数。
@@ -183,7 +183,7 @@ export const useFixedHeightList = () => {
     }, []);
 
     // 组件卸载时取消尚未执行的滚动帧，避免卸载后继续 setState。
-    React.useEffect(() => () => {
+    useEffect(() => () => {
         // 只有存在待执行帧时才调用取消 API。
         if (frameIdRef.current) {
             cancelAnimationFrame(frameIdRef.current);
@@ -191,7 +191,7 @@ export const useFixedHeightList = () => {
     }, []);
 
     // 使用稳定 id 切换选择状态，状态生命周期不依赖虚拟行 DOM。
-    const toggleSelected = React.useCallback((id: number) => {
+    const toggleSelected = useCallback((id: number) => {
         // 函数式更新保证连续点击不会读取到过期 Set。
         setSelectedIds((current) => {
             // Set 是可变对象，复制后再修改才能让 React 识别引用变化。
@@ -204,13 +204,13 @@ export const useFixedHeightList = () => {
     }, []);
 
     // 暴露稳定的命令函数，让工具栏可以平滑回到物理滚动顶部。
-    const scrollToTop = React.useCallback(() => {
+    const scrollToTop = useCallback(() => {
         // ref 未绑定时可选链会安全跳过；top 0 同时对应逻辑列表顶部。
         viewportRef.current?.scrollTo({top: 0, behavior: 'smooth'});
     }, []);
 
     // 步骤 5：切换规模只更新数字，不创建与总量等长的数据数组。
-    const changeDataSize = React.useCallback((size: number) => {
+    const changeDataSize = useCallback((size: number) => {
         // 更新逻辑数量，区间模型会在下一次渲染时使用新边界。
         setItemCount(size);
         // 新数据规模视为新列表，清空旧业务选择状态。

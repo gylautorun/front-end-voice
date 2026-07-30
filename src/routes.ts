@@ -26,6 +26,8 @@ import {
 
     SITE_MAP_WEBSOCKET_DEMO,
     SITE_MAP_WEBSOCKET_SHARED_CONNECTION_DEMO,
+    SITE_MAP_WEBSOCKET_RELIABLE_CONNECTION_DEMO,
+    SITE_MAP_SOCKET_IO_RELIABLE_DEMO,
     SITE_MAP_SOCKET_GROUP,
     SITE_MAP_WS_SOCKET_GROUP,
 
@@ -152,6 +154,16 @@ export const routes = [
         key: SITE_MAP_WEBSOCKET_SHARED_CONNECTION_DEMO.key,
         path: SITE_MAP_WEBSOCKET_SHARED_CONNECTION_DEMO.path,
         component: React.lazy(() => import('./pages/websocket/shared-connection-demo/index')),
+    },
+    {
+        key: SITE_MAP_WEBSOCKET_RELIABLE_CONNECTION_DEMO.key,
+        path: SITE_MAP_WEBSOCKET_RELIABLE_CONNECTION_DEMO.path,
+        component: React.lazy(() => import('./pages/websocket/reliable-connection-demo/index')),
+    },
+    {
+        key: SITE_MAP_SOCKET_IO_RELIABLE_DEMO.key,
+        path: SITE_MAP_SOCKET_IO_RELIABLE_DEMO.path,
+        component: React.lazy(() => import('./pages/websocket/reliable-socket-io-demo/index')),
     },
     {
         key: SITE_MAP_SOCKET_GROUP.key,

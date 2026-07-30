@@ -21,6 +21,18 @@ export default defineConfig({
     // 在开发服务器中处理历史模式路由
     // 当请求的路径不存在时，返回 index.html
     proxy: {
+      // WebSocket 可靠连接 demo：由 Vite 透传 HTTP Upgrade 到本地 ws 服务。
+      '/ws': {
+        target: 'http://localhost:8083',
+        ws: true,
+        changeOrigin: true,
+      },
+      // Socket.IO 同时代理 polling HTTP 请求和后续 WebSocket Upgrade。
+      '/socket.io': {
+        target: 'http://localhost:8084',
+        ws: true,
+        changeOrigin: true,
+      },
       // AI 打字机专用代理：保留 /api/sse-ai-typed 路径并转发到 SSE 服务。
       '/api/sse-ai-typed': {
         // 本地 Node SSE 服务地址。

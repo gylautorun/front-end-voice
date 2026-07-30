@@ -1,0 +1,314 @@
+.page {
+  min-height: 100%;
+  padding: 28px;
+  color: #202124;
+  background: #f6f7f8;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1280px;
+  margin: 0 auto 20px;
+
+  h1 {
+    margin: 2px 0 0;
+    font-size: 28px;
+    line-height: 1.2;
+    letter-spacing: 0;
+  }
+}
+
+.eyebrow {
+  margin: 0;
+  color: #b42318;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.connectionBar {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) auto;
+  gap: 12px;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 16px 0;
+  border-top: 1px solid #dfe1e5;
+  border-bottom: 1px solid #dfe1e5;
+}
+
+.connectionActions {
+  display: flex;
+  gap: 8px;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  max-width: 1280px;
+  margin: 0 auto;
+  border-bottom: 1px solid #dfe1e5;
+}
+
+.metric {
+  display: grid;
+  grid-template-columns: 20px 1fr;
+  gap: 3px 8px;
+  padding: 18px 20px;
+  border-right: 1px solid #dfe1e5;
+
+  &:last-child {
+    border-right: 0;
+  }
+
+  :global(.anticon) {
+    grid-row: 1 / span 2;
+    align-self: center;
+    color: #b42318;
+    font-size: 17px;
+  }
+
+  span {
+    color: #70757a;
+    font-size: 12px;
+  }
+
+  strong {
+    font-size: 16px;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(300px, 0.8fr);
+  gap: 20px;
+  max-width: 1280px;
+  margin: 20px auto 0;
+}
+
+.chatPanel,
+.activityPanel {
+  min-width: 0;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #dfe1e5;
+  border-radius: 6px;
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 66px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #eceff1;
+
+  h2 {
+    margin: 0 0 2px;
+    font-size: 16px;
+    line-height: 1.3;
+    letter-spacing: 0;
+  }
+
+  span {
+    color: #70757a;
+    font-size: 12px;
+  }
+
+  :global(.ant-tag) {
+    max-width: 190px;
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.messageList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 390px;
+  padding: 18px;
+  overflow-y: auto;
+  background: #fbfbfc;
+}
+
+.localMessage,
+.remoteMessage {
+  width: min(78%, 560px);
+  padding: 10px 12px;
+  border-radius: 6px;
+
+  p {
+    margin: 6px 0 0;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+  }
+
+  :global(.ant-tag) {
+    margin-top: 8px;
+  }
+}
+
+.localMessage {
+  align-self: flex-end;
+  color: #fff;
+  background: #202124;
+
+  .messageMeta span {
+    color: rgba(255, 255, 255, 0.72);
+  }
+}
+
+.remoteMessage {
+  align-self: flex-start;
+  background: #fff;
+  border: 1px solid #dfe1e5;
+}
+
+.messageMeta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+
+  span {
+    color: #70757a;
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.composer {
+  display: grid;
+  grid-template-columns: 104px minmax(0, 1fr) 40px;
+  gap: 8px;
+  align-items: end;
+  padding: 14px;
+  border-top: 1px solid #eceff1;
+}
+
+.nicknameInput {
+  width: 104px;
+}
+
+.activityList {
+  height: 460px;
+  overflow-y: auto;
+}
+
+.activity {
+  display: grid;
+  grid-template-columns: 62px minmax(0, 1fr);
+  gap: 10px;
+  padding: 11px 16px;
+  border-bottom: 1px solid #f0f1f2;
+  border-left: 3px solid transparent;
+
+  time {
+    color: #8a8d91;
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  p {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+  }
+}
+
+.success {
+  border-left-color: #20815d;
+}
+
+.warning {
+  border-left-color: #d97706;
+}
+
+.danger {
+  border-left-color: #b42318;
+}
+
+.info {
+  border-left-color: #5f6368;
+}
+
+.empty {
+  display: grid;
+  min-height: 120px;
+  color: #8a8d91;
+  font-size: 13px;
+  place-items: center;
+}
+
+@media (max-width: 900px) {
+  .page {
+    padding: 20px;
+  }
+
+  .metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .metric:nth-child(2) {
+    border-right: 0;
+  }
+
+  .metric:nth-child(-n + 2) {
+    border-bottom: 1px solid #dfe1e5;
+  }
+
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .activityList {
+    height: 300px;
+  }
+}
+
+@media (max-width: 600px) {
+  .page {
+    padding: 16px 12px;
+  }
+
+  .header h1 {
+    font-size: 23px;
+  }
+
+  .connectionBar {
+    grid-template-columns: 1fr;
+  }
+
+  .connectionActions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    button {
+      width: 100%;
+    }
+  }
+
+  .metric {
+    padding: 14px 10px;
+  }
+
+  .composer {
+    grid-template-columns: minmax(0, 1fr) 40px;
+  }
+
+  .nicknameInput {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .localMessage,
+  .remoteMessage {
+    width: 90%;
+  }
+}

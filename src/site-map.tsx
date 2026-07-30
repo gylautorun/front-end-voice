@@ -189,6 +189,18 @@ export const SITE_MAP_WEBSOCKET_SHARED_CONNECTION_DEMO = {
     label: () => '共享连接示例',
     path: '/websocket/shared-connection-demo',
 };
+export const SITE_MAP_WEBSOCKET_RELIABLE_CONNECTION_DEMO = {
+    entry: ENTRY_MAIN,
+    key: 'websocket-reliable-connection-demo',
+    label: () => '原生 WebSocket 可靠连接',
+    path: '/websocket/reliable-connection-demo',
+};
+export const SITE_MAP_SOCKET_IO_RELIABLE_DEMO = {
+    entry: ENTRY_MAIN,
+    key: 'reliable-socket-io-demo',
+    label: () => 'Socket.IO 可靠连接',
+    path: '/websocket/reliable-socket-io-demo',
+};
 export const SITE_MAP_SOCKET_GROUP = {
     label: () => 'socket群聊',
     key: 'socket-group',
@@ -210,6 +222,8 @@ export const SITE_MAP_WEBSOCKET_LIST = {
     children: [
         SITE_MAP_WEBSOCKET_DEMO,
         SITE_MAP_WEBSOCKET_SHARED_CONNECTION_DEMO,
+        SITE_MAP_WEBSOCKET_RELIABLE_CONNECTION_DEMO,
+        SITE_MAP_SOCKET_IO_RELIABLE_DEMO,
         SITE_MAP_SOCKET_GROUP,
         SITE_MAP_WS_SOCKET_GROUP,
     ],

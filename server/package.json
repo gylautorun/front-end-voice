@@ -6,9 +6,13 @@
   "scripts": {
     "sse:ai-typed": "node sse-ai-typed/app.js",
     "test:sse-ai-typed": "node --test sse-ai-typed/*.test.js",
+    "websocket:reliable": "node reliable-websocket/app.js",
+    "test:reliable-websocket": "node --test reliable-websocket/*.test.js",
+    "socket-io:reliable": "node socket-io-reliable/app.js",
+    "test:socket-io-reliable": "node --test socket-io-reliable/*.test.js",
     "sse": "node sse/index.js",
     "sse:app": "node sse/app.js",
-    "test": "npm run test:sse-ai-typed"
+    "test": "npm run test:sse-ai-typed && npm run test:reliable-websocket && npm run test:socket-io-reliable"
   },
   "author": "",
   "license": "ISC",
@@ -16,6 +20,11 @@
     "better-sse": "^0.16.1",
     "cors": "^2.8.5",
     "express": "^4.19.2",
-    "querystring": "^0.2.1"
+    "querystring": "^0.2.1",
+    "socket.io": "^4.8.1",
+    "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "socket.io-client": "^4.8.1"
   }
 }

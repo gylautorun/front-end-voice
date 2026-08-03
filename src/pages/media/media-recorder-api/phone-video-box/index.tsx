@@ -1,6 +1,6 @@
 import React from 'react'
 import cx from 'classnames';
-import {getId} from '../../../utils/util-get-id';
+import {getId} from '../../../../utils/util-get-id';
 import style from './style.module.scss';
 
 interface ISpeakItem {

@@ -1,6 +1,6 @@
 import {useState, useEffect, useRef} from 'react'
 import {Button, Input, Alert, Space} from 'antd';
-import voiceSvg from '../../assets/voice.svg';
+import voiceSvg from '../../../assets/voice.svg';
 import {useSpeechRecognition, SpeechRecognitionEvent, SpeechRecognitionInstance} from './use-speech-recognition';
 import style from './style.module.scss';
 

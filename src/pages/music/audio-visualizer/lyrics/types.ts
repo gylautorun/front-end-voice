@@ -12,8 +12,8 @@ export interface LyricsResult {
     albumName: string;
     /** 歌词服务返回的歌手名。 */
     artistName: string;
-    /** 当前功能只接受带时间轴的同步歌词。 */
-    isSynced: true;
+    /** 是否包含可以驱动逐行高亮的时间轴。 */
+    isSynced: boolean;
     /** 标准化后的歌词行。 */
     lines: LyricLine[];
     /** 当前数据提供方。 */

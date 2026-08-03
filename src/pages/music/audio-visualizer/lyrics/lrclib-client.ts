@@ -1,4 +1,4 @@
-import {parseSyncedLyrics} from './lrc-parser';
+import {parsePlainLyrics, parseSyncedLyrics} from './lrc-parser';
 import {LyricsResult} from './types';
 
 /** LRCLIB 搜索接口返回的单个候选结果。 */
@@ -129,35 +129,56 @@ export const searchOnlineLyrics = async (
 
     // 网络数据按 unknown 处理，避免未经校验的数据进入界面。
     const payload: unknown = await response.json();
-    // 只保留结构有效、标题匹配且包含时间轴歌词的记录。
+    // 只保留结构有效、标题匹配且至少包含一种歌词的非纯音乐记录。
     const candidates = Array.isArray(payload)
         ? payload
             .filter(isLrclibTrack)
-            .filter(item => Boolean(item.syncedLyrics))
+            .filter(item => !item.instrumental && Boolean(item.syncedLyrics || item.plainLyrics))
             .filter(item => isTitleCompatible(item, query))
         : [];
-    // 没有同步歌词候选时返回未匹配，而不是回退到无法逐行同步的全文。
+    // 没有任何歌词候选时返回未匹配，而不是当成网络错误。
     if (!candidates.length) return null;
 
-    // 按可信度排序后选择第一份可以成功解析出时间轴的歌词。
-    const selected = [...candidates]
-        .sort((left, right) => (
-            scoreCandidate(right, query, duration) - scoreCandidate(left, query, duration)
-        ))
+    // 先按歌名、歌手和时长排序，同一类型内优先选版本最接近的结果。
+    const sortedCandidates = [...candidates].sort((left, right) => (
+        scoreCandidate(right, query, duration) - scoreCandidate(left, query, duration)
+    ));
+    // 无论全文候选分数多高，都先寻找一份能够成功解析的同步歌词。
+    const syncedSelection = sortedCandidates
+        .filter(candidate => Boolean(candidate.syncedLyrics))
         .map(candidate => ({
             candidate,
             lines: parseSyncedLyrics(candidate.syncedLyrics || ''),
         }))
         .find(item => item.lines.length > 0);
-    // 候选字符串无法解析出有效时间标签时按未找到处理。
-    if (!selected) return null;
+    if (syncedSelection) {
+        return {
+            albumName: syncedSelection.candidate.albumName,
+            artistName: syncedSelection.candidate.artistName,
+            isSynced: true,
+            lines: syncedSelection.lines,
+            provider: 'LRCLIB',
+            trackName: syncedSelection.candidate.trackName,
+        };
+    }
+
+    // 服务没有可用时间轴时，回退到评分最高且正文可解析的全文歌词。
+    const plainSelection = sortedCandidates
+        .filter(candidate => Boolean(candidate.plainLyrics))
+        .map(candidate => ({
+            candidate,
+            lines: parsePlainLyrics(candidate.plainLyrics || ''),
+        }))
+        .find(item => item.lines.length > 0);
+    // 同步与全文内容都不可用时才进入未找到状态。
+    if (!plainSelection) return null;
 
     return {
-        albumName: selected.candidate.albumName,
-        artistName: selected.candidate.artistName,
-        isSynced: true,
-        lines: selected.lines,
+        albumName: plainSelection.candidate.albumName,
+        artistName: plainSelection.candidate.artistName,
+        isSynced: false,
+        lines: plainSelection.lines,
         provider: 'LRCLIB',
-        trackName: selected.candidate.trackName,
+        trackName: plainSelection.candidate.trackName,
     };
 };

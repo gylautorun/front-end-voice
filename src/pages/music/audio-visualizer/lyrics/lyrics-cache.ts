@@ -2,20 +2,20 @@ import {LyricsResult} from './types';
 
 /** 当前缓存结构版本；数据结构变化时通过版本号隔离旧数据。 */
 const CACHE_VERSION = 1;
-/** 同步歌词在浏览器中最多保留 30 天。 */
+/** 网络歌词在浏览器中最多保留 30 天。 */
 const CACHE_TTL = 30 * 24 * 60 * 60 * 1000;
 /** 限制缓存歌曲数量，避免歌词文本无限占用 localStorage。 */
 const MAX_CACHE_ENTRIES = 30;
-/** 使用独立命名空间，避免和站点其他本地数据冲突。 */
+/** 保留初版键名，使已经写入的同步歌词缓存可以继续命中。 */
 const STORAGE_KEY = 'music-audio-visualizer:synced-lyrics:v1';
 
-/** 单首同步歌词的持久化记录。 */
+/** 单首网络歌词的持久化记录。 */
 interface LyricsCacheEntry {
     /** 首次写入或最近网络更新的时间戳。 */
     cachedAt: number;
     /** 由搜索词和音频时长组成的稳定索引。 */
     key: string;
-    /** 已解析、可直接渲染的同步歌词。 */
+    /** 已解析、可直接渲染的同步或全文歌词。 */
     result: LyricsResult;
 }
 
@@ -41,22 +41,24 @@ const createCacheKey = (query: string, duration: number) => (
 const isLyricsResult = (value: unknown): value is LyricsResult => {
     // 非对象无法构成歌词结果。
     if (!value || typeof value !== 'object') return false;
-    // 逐项检查界面和同步滚动依赖的字段。
+    // 逐项检查界面和滚动逻辑依赖的字段。
     const result = value as Partial<LyricsResult>;
     return typeof result.albumName === 'string'
         && typeof result.artistName === 'string'
-        && result.isSynced === true
+        && typeof result.isSynced === 'boolean'
         && result.provider === 'LRCLIB'
         && typeof result.trackName === 'string'
         && Array.isArray(result.lines)
         && result.lines.length > 0
         && result.lines.every(line => (
             Boolean(line)
-            && typeof line.startTime === 'number'
-            && Number.isFinite(line.startTime)
-            && line.startTime >= 0
             && typeof line.text === 'string'
             && Boolean(line.text.trim())
+            && (result.isSynced
+                ? typeof line.startTime === 'number'
+                    && Number.isFinite(line.startTime)
+                    && line.startTime >= 0
+                : line.startTime === null)
         ));
 };
 
@@ -112,7 +114,7 @@ const writeEntries = (entries: LyricsCacheEntry[]) => {
     }
 };
 
-/** 按搜索词和歌曲时长读取同步歌词，并将命中记录移到队首。 */
+/** 按搜索词和歌曲时长读取歌词，并将命中记录移到队首。 */
 export const getCachedLyrics = (query: string, duration: number) => {
     // 服务端渲染或测试环境没有 window，此时视为未命中。
     if (typeof window === 'undefined') return null;
@@ -130,13 +132,13 @@ export const getCachedLyrics = (query: string, duration: number) => {
     return matchedEntry.result;
 };
 
-/** 保存一首同步歌词；相同歌曲会覆盖旧版本并移动到队首。 */
+/** 保存一首歌词；相同歌曲会覆盖旧版本并移动到队首。 */
 export const setCachedLyrics = (
     query: string,
     duration: number,
     result: LyricsResult,
 ) => {
-    // 只缓存可以按时间轴播放的有效结果。
+    // 只缓存通过同步或全文结构校验的有效结果。
     if (typeof window === 'undefined' || !isLyricsResult(result)) return false;
     const key = createCacheKey(query, duration);
     const entries = readEntries().filter(entry => entry.key !== key);

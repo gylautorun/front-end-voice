@@ -44,7 +44,7 @@ const findActiveLineIndex = (lines: LyricLine[], currentTime: number) => {
     return activeIndex;
 };
 
-/** 自动匹配、搜索并渲染带时间轴的同步歌词。 */
+/** 自动匹配、搜索并渲染同步或全文歌词。 */
 export const LyricsPanel = memo(function LyricsPanel({
     currentTime,
     metadata,
@@ -72,22 +72,37 @@ export const LyricsPanel = memo(function LyricsPanel({
             ? findActiveLineIndex(result.lines, currentTime)
             : -1
     ), [currentTime, result]);
-    // 成功结果一定带时间轴，提取基本值供滚动 effect 稳定判断。
-    const shouldScrollLyrics = status === 'success' && Boolean(result);
+    // 将歌词类型和播放时长提取为基本值，供两个滚动 effect 稳定判断。
+    const shouldScrollSyncedLyrics = status === 'success' && Boolean(result?.isSynced);
+    const shouldScrollPlainLyrics = status === 'success' && Boolean(result && !result.isSynced);
+    const trackDuration = metadata?.duration || 0;
 
     // 当前歌词变化时平滑滚动，使高亮行稳定停留在面板中部。
     useEffect(() => {
         const viewport = viewportRef.current;
         const activeLine = activeLineRef.current;
         // 非同步歌词、首段前或节点尚未挂载时不执行当前行滚动。
-        if (!shouldScrollLyrics || !viewport || !activeLine || activeLineIndex < 0) return;
+        if (!shouldScrollSyncedLyrics || !viewport || !activeLine || activeLineIndex < 0) return;
         // 根据元素相对容器顶部的位置计算居中滚动目标。
         const top = activeLine.offsetTop
             - viewport.clientHeight / 2
             + activeLine.offsetHeight / 2;
         // 平滑滚动只发生在歌词容器内部，不移动整个页面。
         viewport.scrollTo({top: Math.max(0, top), behavior: 'smooth'});
-    }, [activeLineIndex, shouldScrollLyrics]);
+    }, [activeLineIndex, shouldScrollSyncedLyrics]);
+
+    // 全文歌词没有逐行时间标签，按整首播放比例移动正文作为明确的降级行为。
+    useEffect(() => {
+        const viewport = viewportRef.current;
+        // 只处理成功返回的全文歌词，并要求音频具有有效时长。
+        if (!shouldScrollPlainLyrics || !viewport || !trackDuration) return;
+        // 将播放时间限制到 0–1，避免媒体时长校正期间出现越界位置。
+        const progress = Math.min(1, Math.max(0, currentTime / trackDuration));
+        // scrollHeight 与可视高度的差值就是正文能够移动的实际距离。
+        const scrollableDistance = Math.max(0, viewport.scrollHeight - viewport.clientHeight);
+        // 相邻 timeupdate 之间由浏览器平滑过渡，不移动歌词栏之外的页面。
+        viewport.scrollTo({top: scrollableDistance * progress, behavior: 'smooth'});
+    }, [currentTime, shouldScrollPlainLyrics, trackDuration]);
 
     /** 使用输入框关键词重新匹配当前时长附近的歌词版本。 */
     const handleSearch = (value: string) => {
@@ -111,7 +126,9 @@ export const LyricsPanel = memo(function LyricsPanel({
                     )}
                 </div>
                 <span className={style.lyricsBadge}>
-                    {result ? `${result.provider} · 同步${isCached ? ' · 已缓存' : ''}` : 'LRCLIB'}
+                    {result
+                        ? `${result.provider} · ${result.isSynced ? '同步' : '全文'}${isCached ? ' · 已缓存' : ''}`
+                        : 'LRCLIB'}
                 </span>
             </div>
 
@@ -142,14 +159,14 @@ export const LyricsPanel = memo(function LyricsPanel({
                 )}
                 {/* 请求成功但没有候选时允许用户修改关键词继续搜索。 */}
                 {status === 'not-found' && (
-                    <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="未匹配到同步歌词" />
+                    <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="未匹配到可用歌词" />
                 )}
                 {/* 网络或服务错误使用明确提示，不覆盖搜索框。 */}
                 {status === 'error' && (
                     <Alert type="error" showIcon message={error || '歌词查询失败'} />
                 )}
                 {/* 同步歌词使用可点击按钮，并高亮当前播放行。 */}
-                {status === 'success' && result && (
+                {status === 'success' && result?.isSynced && (
                     <div className={style.syncedLyrics}>
                         {result.lines.map((line, index) => (
                             <button
@@ -161,6 +178,14 @@ export const LyricsPanel = memo(function LyricsPanel({
                             >
                                 {line.text}
                             </button>
+                        ))}
+                    </div>
+                )}
+                {/* 全文歌词留在左侧正文区，不提供不准确的逐行跳转和高亮。 */}
+                {status === 'success' && result && !result.isSynced && (
+                    <div className={style.plainLyrics}>
+                        {result.lines.map((line, index) => (
+                            <p key={`${index}-${line.text}`}>{line.text}</p>
                         ))}
                     </div>
                 )}

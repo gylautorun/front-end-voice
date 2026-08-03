@@ -7,6 +7,14 @@ export interface IPosition {
     bottom: number;
     height: number;
 }
+
+/** 虚拟列表中单条业务数据的结构。 */
+export interface VirtualListItem {
+    id: number;
+    title: string;
+    value: string;
+}
+
 class State {
     constructor() {
         makeAutoObservable(this, {
@@ -28,9 +36,9 @@ class State {
                 height: itemSize, 
             };
         });
-        this.reaction();
     }
-    list = [];
+    /** 明确数组元素类型，避免空数组在严格模式下被推断为 never[]。 */
+    list: VirtualListItem[] = [];
     positions: IPosition[] = [];
     itemSize = 80; // 初始给一个开始高度
     screenHeight = 0;
@@ -51,7 +59,7 @@ class State {
         return this.list.length;
     }
     get listHeight(): number {
-        return this.positions[this.positions.length - 1].bottom;
+        return this.positions[this.positions.length - 1]?.bottom || 0;
     }
     /**
      * 可视区显示的个数
@@ -164,13 +172,9 @@ class State {
         }
     };
 
-    reaction() {
-        // this.reactions.reaction(
-        // );
-    }
-
     dispose() {
-        this.reactions.dispose();
+        // 释放已经卸载的 DOM 引用，避免再次进入页面时复用旧节点。
+        this.refs = [];
     }
 }
 

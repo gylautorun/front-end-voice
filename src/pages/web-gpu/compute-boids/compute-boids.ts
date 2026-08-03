@@ -61,9 +61,7 @@ export class ComputeBoids {
 
   async initialize(): Promise<void> {
     // 请求 GPU 适配器
-    const adapter = await navigator.gpu?.requestAdapter({
-      featureLevel: 'compatibility',
-    });
+    const adapter = await navigator.gpu?.requestAdapter();
     quitIfAdapterNotAvailable(adapter);
     this.adapter = adapter;
 
@@ -307,9 +305,12 @@ export class ComputeBoids {
       this.particleBindGroups[i] = this.device.createBindGroup({
         layout: this.computePipeline.getBindGroupLayout(0),
         entries: [
-          { binding: 0, resource: this.simParamBuffer },
-          { binding: 1, resource: this.particleBuffers[i] },
-          { binding: 2, resource: this.particleBuffers[(i + 1) % 2] },
+          { binding: 0, resource: { buffer: this.simParamBuffer } },
+          { binding: 1, resource: { buffer: this.particleBuffers[i] } },
+          {
+            binding: 2,
+            resource: { buffer: this.particleBuffers[(i + 1) % 2] },
+          },
         ],
       });
     }
@@ -383,7 +384,7 @@ export class ComputeBoids {
       this.device.queue.submit([commandEncoder.finish()]);
 
       if (this.hasTimestampQuery && resultBuffer) {
-        resultBuffer.mapAsync('READ').then(() => {
+        resultBuffer.mapAsync(GPUMapMode.READ).then(() => {
           const times = new BigInt64Array(resultBuffer!.getMappedRange());
           const computePassDuration = Number(times[1] - times[0]);
           const renderPassDuration = Number(times[3] - times[2]);

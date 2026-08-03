@@ -65,7 +65,7 @@ function supportsDirectBufferBinding(device: GPUDevice): boolean {
   try {
     device.createBindGroup({
       layout,
-      entries: [{ binding: 0, resource: buffer }],
+      entries: [{ binding: 0, resource: { buffer } }],
     });
     return true;
   } catch {
@@ -94,7 +94,7 @@ function supportsDirectTextureBinding(device: GPUDevice): boolean {
   try {
     device.createBindGroup({
       layout,
-      entries: [{ binding: 0, resource: texture }],
+      entries: [{ binding: 0, resource: texture.createView() }],
     });
     return true;
   } catch {
@@ -134,10 +134,15 @@ function supportsDirectTextureAttachments(device: GPUDevice): boolean {
   try {
     const pass = encoder.beginRenderPass({
       colorAttachments: [
-        { view: texture, resolveTarget, loadOp: 'load', storeOp: 'store' },
+        {
+          view: texture.createView(),
+          resolveTarget: resolveTarget.createView(),
+          loadOp: 'load',
+          storeOp: 'store',
+        },
       ],
       depthStencilAttachment: {
-        view: depthTexture,
+        view: depthTexture.createView(),
         depthClearValue: 1.0,
         depthLoadOp: 'load',
         depthStoreOp: 'store',
@@ -172,8 +177,9 @@ export function quitIfWebGPUNotAvailableOrMissingFeatures(
   device.lost.then((reason) => {
     fail(`设备丢失（"${reason.reason}"）：\n${reason.message}`);
   });
-  device.addEventListener('uncapturederror', (ev) => {
-    fail(`未捕获的错误：\n${ev.error.message}`);
+  device.addEventListener('uncapturederror', (event) => {
+    const gpuErrorEvent = event as GPUUncapturedErrorEvent;
+    fail(`未捕获的错误：\n${gpuErrorEvent.error.message}`);
   });
 
   if (

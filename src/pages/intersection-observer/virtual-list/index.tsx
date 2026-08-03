@@ -1,4 +1,4 @@
-import {useState, useEffect, useContext, useRef} from 'react';
+import {useEffect, useContext, useRef} from 'react';
 import {Observer} from 'mobx-react';
 
 import {store} from './state';
@@ -77,7 +77,7 @@ export function VirtualList() {
             className={style.contentItem}
             ref={r => {
               r?.setAttribute('data-index', index.toString());
-              ref.current.push(r);
+              ref.current[index] = r;
             }}
             key={item.id || index}
           >

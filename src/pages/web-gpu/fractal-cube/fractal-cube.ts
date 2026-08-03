@@ -42,9 +42,7 @@ export class FractalCube {
    */
   async initialize(): Promise<void> {
     // 请求 WebGPU 适配器
-    const adapter = await navigator.gpu?.requestAdapter({
-      featureLevel: 'compatibility',
-    });
+    const adapter = await navigator.gpu?.requestAdapter();
 
     // 请求 WebGPU 设备
     const device = await adapter?.requestDevice();
@@ -234,8 +232,8 @@ export class FractalCube {
     const uniformBindGroup = this.device!.createBindGroup({
       layout: this.pipeline!.getBindGroupLayout(0),
       entries: [
-        { binding: 0, resource: this.uniformBuffer! },
-        { binding: 1, resource: this.sampler || {} },
+        { binding: 0, resource: { buffer: this.uniformBuffer! } },
+        { binding: 1, resource: this.sampler! },
         { binding: 2, resource: this.cubeTexture!.createView() },
       ],
     });
@@ -405,10 +403,6 @@ export class FractalCube {
     }
     if (this.cubeTexture) {
       this.cubeTexture.destroy();
-    }
-    // 检查 sampler 是否有 destroy 方法
-    if (this.sampler && typeof this.sampler.destroy === 'function') {
-      this.sampler.destroy();
     }
     if (this.device) {
       this.device.destroy();

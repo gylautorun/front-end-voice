@@ -45,9 +45,7 @@ export class RotatingCube {
    */
   async initialize(): Promise<void> {
     // 请求 WebGPU 适配器
-    const adapter = await navigator.gpu?.requestAdapter({
-      featureLevel: 'compatibility',
-    });
+    const adapter = await navigator.gpu?.requestAdapter();
 
     // 请求 WebGPU 设备
     const device = await adapter?.requestDevice();
@@ -191,7 +189,7 @@ export class RotatingCube {
 
     const uniformBindGroup = this.device.createBindGroup({
       layout: this.pipeline.getBindGroupLayout(0),
-      entries: [{ binding: 0, resource: uniformBuffer }],
+      entries: [{ binding: 0, resource: { buffer: uniformBuffer } }],
     });
     this.uniformBindGroup = uniformBindGroup;
   }

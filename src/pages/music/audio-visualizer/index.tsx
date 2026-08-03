@@ -2,6 +2,7 @@ import {useCallback, useEffect, useRef, useState} from 'react';
 import {Alert} from 'antd';
 import demoTrackUrl from '../../speech/audio-context/audio-music/春涧.mp3';
 import {AudioInspector} from './components/audio-inspector';
+import {LyricsPanel} from './components/lyrics-panel';
 import {PlayerControls} from './components/player-controls';
 import {VisualizerStage} from './components/visualizer-stage';
 import {VisualizerToolbar} from './components/visualizer-toolbar';
@@ -98,8 +99,13 @@ function MusicAudioVisualizer() {
             {/* 解析或播放失败时显示可关闭的错误提示。 */}
             {error && <Alert className={style.alert} type="error" message={error} showIcon closable />}
 
-            {/* 主工作区：左侧为画布与播放器，右侧为音频分析信息。 */}
+            {/* 主工作区：歌词在左、画布与播放器居中、音频分析信息在右。 */}
             <section className={style.workspace}>
+                <LyricsPanel
+                    currentTime={currentTime}
+                    metadata={metadata}
+                    onSeek={seek}
+                />
                 <div className={style.visualColumn}>
                     <VisualizerStage
                         analyserRef={analyserRef}

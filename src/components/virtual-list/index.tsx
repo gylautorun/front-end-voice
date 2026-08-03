@@ -32,17 +32,16 @@ export const VirtualList = observer(() => {
       >
         {visibleData.map((item, index) => {
           return (
-            <Observer>
+            <Observer key={item.id || index}>
               {() => (
                 <div
                   className={style.contentItem}
                   ref={r => {
                     runInAction(() => {
-                      refs.push(r);
+                      refs[index] = r;
                     });
                   }}
                   data-id={item.id}
-                  key={item.id || index}
                 >
                   <div className={style.contentInner}>
                     <div className={style.title}>{item.title}</div>

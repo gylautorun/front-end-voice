@@ -167,10 +167,10 @@
     margin-top: 12px;
 }
 
-/* 主工作区在宽屏上分为 Canvas 与分析器两列。 */
+/* 主工作区在宽屏上按歌词、Canvas、分析器排列为三列。 */
 .workspace {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 276px;
+    grid-template-columns: minmax(240px, 280px) minmax(0, 1fr) 276px;
     border: 1px solid #d9dfdb;
     border-top: 0;
     background: #fff;
@@ -270,6 +270,142 @@
 
 .volume {
     flex: 0 0 92px;
+}
+
+/* 网络歌词固定在宽屏工作区左侧，并与 Canvas 区域等高。 */
+.lyrics-panel {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    border-right: 1px solid #d9dfdb;
+    background: #fff;
+}
+
+/* 歌词来源、歌曲身份和同步状态。 */
+.lyrics-header {
+    flex: 0 0 auto;
+    padding: 22px 18px;
+    border-bottom: 1px solid #e0e5e1;
+    background: #f8f9f7;
+}
+
+.lyrics-identity {
+    min-width: 0;
+
+    h2 {
+        overflow: hidden;
+        margin: 4px 0 6px;
+        color: #252d29;
+        font-size: 17px;
+        line-height: 1.3;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+}
+
+.lyrics-meta {
+    display: -webkit-box;
+    overflow: hidden;
+    color: #7a857f;
+    font-size: 11px;
+    line-height: 1.5;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+}
+
+.lyrics-badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 22px;
+    margin-top: 18px;
+    padding: 3px 7px;
+    border: 1px solid #cfd7d2;
+    border-radius: 4px;
+    color: #506058;
+    background: #fff;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+/* 搜索框固定在歌词滚动区上方。 */
+.lyrics-search {
+    align-self: start;
+    flex: 0 0 auto;
+    width: auto;
+    margin: 16px 18px 10px;
+}
+
+/* 只让歌词正文滚动，避免自动高亮移动整个页面。 */
+.lyrics-viewport {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 0 24px;
+    scroll-behavior: smooth;
+    scrollbar-width: thin;
+    scrollbar-color: #b6c1bb transparent;
+
+    :global(.ant-empty) {
+        margin-block: 30px;
+    }
+}
+
+/* 前后弹性留白允许第一行和最后一行也能滚动到容器中线。 */
+.synced-lyrics {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+
+    &::before,
+    &::after {
+        content: '';
+        flex: 0 0 calc(50% - 16px);
+    }
+}
+
+/* 加载状态在可用歌词区域内居中。 */
+.lyrics-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 96px;
+    color: #6c7972;
+    font-size: 12px;
+}
+
+/* 同步歌词使用无矩形装饰的文本按钮，保留点击跳转语义。 */
+.lyric-line,
+.active-lyric-line {
+    display: block;
+    flex: 0 0 auto;
+    width: 100%;
+    min-height: 32px;
+    padding: 6px 8px;
+    border: 0;
+    color: #7d8982;
+    background: transparent;
+    font: inherit;
+    font-size: 13px;
+    line-height: 1.55;
+    letter-spacing: 0;
+    text-align: center;
+    cursor: pointer;
+    transition: color 160ms ease, transform 160ms ease;
+}
+
+.lyric-line:hover {
+    color: #34453d;
+}
+
+.active-lyric-line {
+    color: #16865f;
+    font-size: 15px;
+    font-weight: 700;
+    transform: scale(1.025);
 }
 
 /* 音频元数据、灵敏度和频段图例面板。 */
@@ -426,6 +562,19 @@
     .track-text strong {
         max-width: 520px;
     }
+
+    .workspace {
+        grid-template-columns: minmax(230px, 260px) minmax(0, 1fr);
+    }
+
+    .visual-column {
+        border-right: 0;
+    }
+
+    .inspector {
+        grid-column: 1 / -1;
+        border-top: 1px solid #d9dfdb;
+    }
 }
 
 /* 窄屏下将分析面板移到 Canvas 下方。 */
@@ -435,11 +584,21 @@
     }
 
     .visual-column {
+        grid-row: 1;
         border-right: 0;
         border-bottom: 1px solid #d9dfdb;
     }
 
+    .lyrics-panel {
+        grid-row: 2;
+        height: 360px;
+        border-top: 1px solid #d9dfdb;
+        border-right: 0;
+    }
+
     .inspector {
+        grid-row: 3;
+        grid-column: 1;
         display: grid;
         grid-template-columns: minmax(180px, 0.7fr) minmax(240px, 1.3fr);
         gap: 0 24px;
@@ -462,6 +621,7 @@
     .band-legend {
         grid-column: 2;
     }
+
 }
 
 /* 手机宽度下收紧字号、操作区和进度控件。 */
@@ -524,6 +684,29 @@
 
     .volume {
         flex-basis: 76px;
+    }
+
+    .lyrics-panel {
+        display: block;
+        height: auto;
+    }
+
+    .lyrics-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        border-right: 0;
+        border-bottom: 1px solid #e0e5e1;
+    }
+
+    .lyrics-badge {
+        flex: 0 0 auto;
+        margin-top: 0;
+    }
+
+    .lyrics-viewport {
+        height: 250px;
     }
 
     .inspector {

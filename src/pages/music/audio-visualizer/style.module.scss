@@ -1,0 +1,542 @@
+/* 页面根容器：抵消全局 content 内边距，建立音乐工作台背景。 */
+.page {
+    min-height: calc(100% + 40px);
+    margin: -20px;
+    padding: 24px;
+    color: #202723;
+    background: #f3f5f2;
+}
+
+/* 页面标题和全局运行状态。 */
+.page-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 20px;
+
+    h1 {
+        margin: 4px 0 0;
+        font-size: 28px;
+        font-weight: 700;
+        line-height: 1.2;
+        letter-spacing: 0;
+    }
+}
+
+/* 小型英文分区标识，同时用于页头和分析面板。 */
+.section-label {
+    display: block;
+    color: #617069;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.4;
+    letter-spacing: 0;
+}
+
+/* 页头右侧的解析/播放状态。 */
+.track-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 92px;
+    padding-bottom: 3px;
+    color: #56615c;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.live-dot,
+.idle-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.live-dot {
+    background: #1fa475;
+    box-shadow: 0 0 0 4px rgba(31, 164, 117, 0.14);
+}
+
+.idle-dot {
+    background: #8a948f;
+}
+
+/* 音轨、模式切换与上传操作的顶部工具栏。 */
+.toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    min-height: 72px;
+    padding: 12px 14px;
+    border: 1px solid #d9dfdb;
+    border-radius: 6px 6px 0 0;
+    background: #fff;
+}
+
+/* 工具栏左侧的音轨识别区。 */
+.track-identity {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    gap: 12px;
+}
+
+/* 用四根彩色柱构成的音轨缩略图。 */
+.track-artwork {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    flex: 0 0 44px;
+    gap: 3px;
+    width: 44px;
+    height: 44px;
+    padding: 10px 8px;
+    border-radius: 5px;
+    background: #18201d;
+
+    span {
+        width: 4px;
+        background: #53d3a6;
+    }
+
+    span:nth-child(1) {
+        height: 9px;
+    }
+
+    span:nth-child(2) {
+        height: 21px;
+        background: #efc45e;
+    }
+
+    span:nth-child(3) {
+        height: 15px;
+        background: #5b8ff9;
+    }
+
+    span:nth-child(4) {
+        height: 24px;
+    }
+}
+
+.track-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    gap: 4px;
+
+    strong,
+    span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    strong {
+        max-width: 330px;
+        color: #202723;
+        font-size: 14px;
+    }
+
+    span {
+        color: #758079;
+        font-size: 12px;
+    }
+}
+
+.toolbar-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+
+    :global(.ant-segmented-item-label) > span {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+}
+
+.file-input,
+.audio-element {
+    display: none;
+}
+
+.alert {
+    margin-top: 12px;
+}
+
+/* 主工作区在宽屏上分为 Canvas 与分析器两列。 */
+.workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 276px;
+    border: 1px solid #d9dfdb;
+    border-top: 0;
+    background: #fff;
+}
+
+.visual-column {
+    min-width: 0;
+    border-right: 1px solid #d9dfdb;
+}
+
+/* 固定可视化高度，避免动画和状态文本导致布局跳动。 */
+.visual-stage {
+    position: relative;
+    width: 100%;
+    height: clamp(390px, 56vh, 650px);
+    min-height: 390px;
+    overflow: hidden;
+    background: #101513;
+
+    canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
+}
+
+/* Canvas 左上角的模式与 LIVE/IDLE 状态。 */
+.stage-status {
+    position: absolute;
+    top: 14px;
+    left: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: rgba(235, 244, 239, 0.68);
+    font-size: 11px;
+    letter-spacing: 0;
+    pointer-events: none;
+
+    span + span {
+        padding-left: 8px;
+        border-left: 1px solid rgba(235, 244, 239, 0.2);
+        color: #74dfbd;
+    }
+}
+
+/* 音频解码期间覆盖 Canvas 的半透明加载层。 */
+.parsing-overlay {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background: rgba(16, 21, 19, 0.64);
+}
+
+/* Canvas 下方的自定义播放器。 */
+.player-controls {
+    min-height: 76px;
+    padding: 14px 18px;
+    background: #fff;
+}
+
+.transport-row {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    gap: 9px;
+}
+
+.play-button {
+    flex: 0 0 auto;
+    width: 42px !important;
+    height: 42px !important;
+    color: #17231f !important;
+    font-size: 32px !important;
+}
+
+.time {
+    flex: 0 0 42px;
+    color: #637069;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+}
+
+.progress {
+    flex: 1 1 auto;
+    min-width: 80px;
+    margin-inline: 3px !important;
+}
+
+.sound-icon {
+    flex: 0 0 auto;
+    margin-left: 5px;
+    color: #64716a;
+}
+
+.volume {
+    flex: 0 0 92px;
+}
+
+/* 音频元数据、灵敏度和频段图例面板。 */
+.inspector {
+    min-width: 0;
+    padding: 22px 20px;
+    background: #f8f9f7;
+}
+
+.inspector-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid #dfe4e0;
+
+    h2 {
+        margin: 3px 0 0;
+        font-size: 18px;
+        line-height: 1.3;
+        letter-spacing: 0;
+    }
+}
+
+.format-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 38px;
+    height: 24px;
+    padding: 0 7px;
+    border: 1px solid #cfd7d2;
+    border-radius: 4px;
+    color: #4c5a53;
+    background: #fff;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.metadata-list {
+    margin: 0;
+    padding: 8px 0 0;
+
+    > div {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 0;
+        border-bottom: 1px solid #e2e6e3;
+    }
+
+    dt {
+        color: #7a857f;
+        font-size: 12px;
+    }
+
+    dd {
+        margin: 0;
+        color: #252d29;
+        font-size: 13px;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        text-align: right;
+    }
+}
+
+.sensitivity-control {
+    padding-top: 24px;
+}
+
+.control-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+    color: #5e6963;
+    font-size: 12px;
+
+    strong {
+        color: #26302b;
+        font-variant-numeric: tabular-nums;
+    }
+}
+
+/* 七段频谱使用色条、名称与 Hz 范围的两列图例。 */
+.band-legend {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 12px;
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid #dfe4e0;
+
+    span {
+        display: grid;
+        grid-template-columns: 8px minmax(0, 1fr);
+        align-items: center;
+        gap: 1px 6px;
+        color: #6b7770;
+        font-size: 11px;
+    }
+
+    i {
+        grid-row: 1 / span 2;
+        width: 8px;
+        height: 24px;
+        border-radius: 2px;
+    }
+
+    b {
+        overflow: hidden;
+        color: #36413b;
+        font-size: 11px;
+        font-weight: 600;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    small {
+        color: #87918b;
+        font-size: 9px;
+        line-height: 1.2;
+        white-space: nowrap;
+    }
+}
+
+:global(.ant-slider .ant-slider-track) {
+    background: #2b9d78;
+}
+
+:global(.ant-slider:hover .ant-slider-track) {
+    background: #238a69;
+}
+
+:global(.ant-slider .ant-slider-handle::after) {
+    box-shadow: 0 0 0 2px #2b9d78;
+}
+
+/* 中等宽度下工具栏换行，避免音轨名与操作挤压。 */
+@media (max-width: 1050px) {
+    .toolbar {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .toolbar-actions {
+        justify-content: space-between;
+        width: 100%;
+    }
+
+    .track-text strong {
+        max-width: 520px;
+    }
+}
+
+/* 窄屏下将分析面板移到 Canvas 下方。 */
+@media (max-width: 850px) {
+    .workspace {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .visual-column {
+        border-right: 0;
+        border-bottom: 1px solid #d9dfdb;
+    }
+
+    .inspector {
+        display: grid;
+        grid-template-columns: minmax(180px, 0.7fr) minmax(240px, 1.3fr);
+        gap: 0 24px;
+    }
+
+    .inspector-header {
+        grid-row: 1 / span 2;
+        border-bottom: 0;
+        border-right: 1px solid #dfe4e0;
+        padding-right: 20px;
+    }
+
+    .metadata-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0 18px;
+    }
+
+    .sensitivity-control,
+    .band-legend {
+        grid-column: 2;
+    }
+}
+
+/* 手机宽度下收紧字号、操作区和进度控件。 */
+@media (max-width: 640px) {
+    .page {
+        min-height: calc(100% + 40px);
+        padding: 16px;
+    }
+
+    .page-header {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 10px;
+
+        h1 {
+            font-size: 24px;
+        }
+    }
+
+    .toolbar-actions {
+        align-items: stretch;
+        flex-direction: column;
+
+        :global(.ant-segmented) {
+            width: 100%;
+        }
+
+        :global(.ant-segmented-group) {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        :global(.ant-segmented-item-label) {
+            padding-inline: 6px;
+            font-size: 12px;
+        }
+    }
+
+    .track-text strong {
+        max-width: 210px;
+    }
+
+    .visual-stage {
+        height: 390px;
+    }
+
+    .transport-row {
+        flex-wrap: wrap;
+    }
+
+    .progress {
+        order: 6;
+        flex-basis: calc(100% - 94px);
+        margin-left: 51px !important;
+    }
+
+    .sound-icon {
+        margin-left: auto;
+    }
+
+    .volume {
+        flex-basis: 76px;
+    }
+
+    .inspector {
+        display: block;
+    }
+
+    .inspector-header {
+        border-right: 0;
+        border-bottom: 1px solid #dfe4e0;
+        padding-right: 0;
+    }
+
+    .metadata-list {
+        display: block;
+    }
+}

@@ -2,6 +2,7 @@ import React from 'react';
 import {
     SITE_MAP_SPEECH_RECOGNITION,
     SITE_MAP_SPEECH_SYNTHESIS,
+    SITE_MAP_MUSIC_AUDIO_VISUALIZER,
     SITE_MAP_MEDIA_DEVICE,
     SITE_MAP_AUDIO_CONTEXT,
     SITE_MAP_IMG_VIDEO_PREVIEW,
@@ -51,6 +52,11 @@ export const routes = [
         key: SITE_MAP_SPEECH_SYNTHESIS.key,
         path: SITE_MAP_SPEECH_SYNTHESIS.path,
         component: React.lazy(() => import('./pages/speech/speech-synthesis/index')),
+    },
+    {
+        key: SITE_MAP_MUSIC_AUDIO_VISUALIZER.key,
+        path: SITE_MAP_MUSIC_AUDIO_VISUALIZER.path,
+        component: React.lazy(() => import('./pages/music/audio-visualizer/index')),
     },
     
     {

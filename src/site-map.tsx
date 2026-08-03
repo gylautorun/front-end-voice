@@ -32,6 +32,23 @@ export const SITE_MAP_SPEECH = {
     ],
 };
 
+export const SITE_MAP_MUSIC_AUDIO_VISUALIZER = {
+    entry: ENTRY_MAIN,
+    key: 'music-audio-visualizer',
+    label: () => '音乐解析与可视化',
+    path: '/music/audio-visualizer',
+};
+
+export const SITE_MAP_MUSIC = {
+    entry: ENTRY_MAIN,
+    key: 'music',
+    label: () => '音乐',
+    path: '/music',
+    children: [
+        SITE_MAP_MUSIC_AUDIO_VISUALIZER,
+    ],
+};
+
 export const SITE_MAP_MEDIA_DEVICE = {
     entry: ENTRY_MAIN,
     key: 'media-devices',
@@ -322,6 +339,7 @@ export const SITE_MAP_MAIN = {
     path: '#',
     children: [
         SITE_MAP_SPEECH,
+        SITE_MAP_MUSIC,
         SITE_MAP_WEBSOCKET_LIST,
         SITE_MAP_WEB_GPU_LIST,
         SITE_MAP_MEDIA,

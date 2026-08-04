@@ -1,16 +1,133 @@
-
+/* 三种音源共用的频谱工作区。 */
 .audio-music {
-    .analyser {
-        padding-bottom: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: min(100%, 920px);
+    color: #28332e;
+}
 
-        .canvas {
-            width: 800px;
-            height: 200px;
-            background-color: #2c3e50;
-        }
+/* Canvas 与当前音源状态保持为一个稳定的绘制区域。 */
+.analyser {
+    position: relative;
+    width: 100%;
+    height: 240px;
+    overflow: hidden;
+    border: 1px solid #33423c;
+    border-radius: 6px;
+    background: #111815;
+}
+
+.canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* 状态文字覆盖在画布左上角，不参与 Canvas 尺寸计算。 */
+.source-status {
+    position: absolute;
+    top: 12px;
+    left: 14px;
+    padding: 4px 7px;
+    border: 1px solid rgba(216, 231, 224, 0.18);
+    border-radius: 4px;
+    color: rgba(236, 244, 240, 0.78);
+    background: rgba(17, 24, 21, 0.72);
+    font-size: 11px;
+    line-height: 1.3;
+    pointer-events: none;
+}
+
+/* 每一路音源使用一致的标签、控件和操作按钮排列。 */
+.source-row {
+    display: flex;
+    align-items: center;
+    min-height: 42px;
+    gap: 10px;
+}
+
+.source-label {
+    flex: 0 0 88px;
+    color: #58665f;
+    font-size: 13px;
+}
+
+.audio {
+    width: min(100%, 360px);
+    height: 42px;
+}
+
+.button-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.device-select {
+    min-width: 190px;
+    max-width: min(100%, 360px);
+    height: 32px;
+    padding: 4px 28px 4px 8px;
+    border: 1px solid #bdc9c3;
+    border-radius: 4px;
+    color: #26342e;
+    background: #fff;
+}
+
+.source-row button {
+    min-height: 32px;
+    padding: 5px 12px;
+    border: 1px solid #bdc9c3;
+    border-radius: 4px;
+    color: #26342e;
+    background: #fff;
+    cursor: pointer;
+}
+
+.source-row button:hover {
+    border-color: #319977;
+    color: #187557;
+}
+
+.error {
+    padding: 9px 11px;
+    border: 1px solid #efb5b5;
+    border-radius: 4px;
+    color: #9a2f2f;
+    background: #fff4f4;
+    font-size: 12px;
+}
+
+.warning {
+    padding: 9px 11px;
+    border: 1px solid #e6c66a;
+    border-radius: 4px;
+    color: #6b5311;
+    background: #fff9e8;
+    font-size: 12px;
+}
+
+@media (max-width: 640px) {
+    .analyser {
+        height: 200px;
     }
+
+    .source-row {
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .source-label {
+        flex-basis: 100%;
+    }
+
     .audio {
-        width: 300px;
-        height: 54px;
+        width: 100%;
+    }
+
+    .device-select {
+        width: 100%;
+        max-width: 100%;
     }
 }

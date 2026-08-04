@@ -14,6 +14,10 @@ import {
     SITE_MAP_MUSIC_INTERACTIVE_STAGE,
     SITE_MAP_MUSIC_AMBIENT_LAB,
     SITE_MAP_MUSIC_SOUND_SCULPTURE,
+    SITE_MAP_VIDEO_TEXT_MASK,
+    SITE_MAP_VIDEO_SHADER_EFFECTS,
+    SITE_MAP_VIDEO_BACKGROUND_KEY,
+    SITE_MAP_VIDEO_SCROLL_SCRUB,
     SITE_MAP_MEDIA_DEVICE,
     SITE_MAP_AUDIO_CONTEXT,
     SITE_MAP_IMG_VIDEO_PREVIEW,
@@ -123,6 +127,26 @@ export const routes = [
         key: SITE_MAP_MUSIC_SOUND_SCULPTURE.key,
         path: SITE_MAP_MUSIC_SOUND_SCULPTURE.path,
         component: React.lazy(() => import('./pages/music/sound-sculpture/index')),
+    },
+    {
+        key: SITE_MAP_VIDEO_TEXT_MASK.key,
+        path: SITE_MAP_VIDEO_TEXT_MASK.path,
+        component: React.lazy(() => import('./pages/video/text-mask/index')),
+    },
+    {
+        key: SITE_MAP_VIDEO_SHADER_EFFECTS.key,
+        path: SITE_MAP_VIDEO_SHADER_EFFECTS.path,
+        component: React.lazy(() => import('./pages/video/shader-effects/index')),
+    },
+    {
+        key: SITE_MAP_VIDEO_BACKGROUND_KEY.key,
+        path: SITE_MAP_VIDEO_BACKGROUND_KEY.path,
+        component: React.lazy(() => import('./pages/video/background-key/index')),
+    },
+    {
+        key: SITE_MAP_VIDEO_SCROLL_SCRUB.key,
+        path: SITE_MAP_VIDEO_SCROLL_SCRUB.path,
+        component: React.lazy(() => import('./pages/video/scroll-scrub/index')),
     },
     
     {

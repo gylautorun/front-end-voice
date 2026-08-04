@@ -1,0 +1,34 @@
+.canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: #020405;
+}
+
+.text-input { width: 158px; }
+
+.slider-control {
+    display: grid;
+    align-items: center;
+    grid-template-columns: 28px 92px;
+    gap: 7px;
+    color: #84968e;
+    font-size: 10px;
+}
+
+.slider-control :global(.ant-slider) { margin: 8px 2px; }
+
+.switch-control {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: #84968e;
+    font-size: 10px;
+}
+
+@media (max-width: 640px) {
+    .text-input,
+    .slider-control { width: 100%; }
+    .slider-control { grid-template-columns: 34px minmax(0, 1fr); }
+    .switch-control { justify-content: space-between; }
+}

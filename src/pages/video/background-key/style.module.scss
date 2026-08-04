@@ -1,0 +1,47 @@
+.stage {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #090d0f;
+}
+
+.stage canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.model-badge {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    padding: 7px 9px;
+    border: 1px solid rgba(113, 155, 144, 0.36);
+    border-radius: 3px;
+    color: #b8c8c2;
+    background: rgba(5, 9, 10, 0.76);
+    font-size: 9px;
+    pointer-events: none;
+}
+
+.model-badge[data-status='ready'] { border-color: rgba(66, 226, 192, 0.58); color: #62e7c8; }
+.model-badge[data-status='error'] { border-color: rgba(239, 71, 111, 0.62); color: #ff7998; }
+
+.threshold-control {
+    display: grid;
+    align-items: center;
+    grid-template-columns: 28px 88px;
+    gap: 7px;
+    color: #84968e;
+    font-size: 10px;
+}
+
+.threshold-control :global(.ant-slider) { margin: 8px 2px; }
+
+@media (max-width: 640px) {
+    .threshold-control {
+        grid-template-columns: 34px minmax(0, 1fr);
+        width: 100%;
+    }
+}

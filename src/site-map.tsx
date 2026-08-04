@@ -148,6 +148,52 @@ export const SITE_MAP_MUSIC = {
     ],
 };
 
+/** Canvas 复合模式实现文字内部播放视频。 */
+export const SITE_MAP_VIDEO_TEXT_MASK = {
+    entry: ENTRY_MAIN,
+    key: 'video-text-mask',
+    label: () => '文字视频遮罩',
+    path: '/video/text-mask',
+};
+
+/** Three.js VideoTexture 与 GLSL 视频形变。 */
+export const SITE_MAP_VIDEO_SHADER_EFFECTS = {
+    entry: ENTRY_MAIN,
+    key: 'video-shader-effects',
+    label: () => '视频 Shader',
+    path: '/video/shader-effects',
+};
+
+/** Canvas 绿幕色度键与 BodyPix 人像分割。 */
+export const SITE_MAP_VIDEO_BACKGROUND_KEY = {
+    entry: ENTRY_MAIN,
+    key: 'video-background-key',
+    label: () => '抠像与虚拟背景',
+    path: '/video/background-key',
+};
+
+/** 把滚动位置映射到视频 currentTime 的逐帧效果。 */
+export const SITE_MAP_VIDEO_SCROLL_SCRUB = {
+    entry: ENTRY_MAIN,
+    key: 'video-scroll-scrub',
+    label: () => '滚动逐帧视频',
+    path: '/video/scroll-scrub',
+};
+
+/** 视频视觉处理示例目录。 */
+export const SITE_MAP_VIDEO = {
+    entry: ENTRY_MAIN,
+    key: 'video-effects',
+    label: () => '视频特效',
+    path: '/video',
+    children: [
+        SITE_MAP_VIDEO_TEXT_MASK,
+        SITE_MAP_VIDEO_SHADER_EFFECTS,
+        SITE_MAP_VIDEO_BACKGROUND_KEY,
+        SITE_MAP_VIDEO_SCROLL_SCRUB,
+    ],
+};
+
 export const SITE_MAP_MEDIA_DEVICE = {
     entry: ENTRY_MAIN,
     key: 'media-devices',
@@ -439,6 +485,7 @@ export const SITE_MAP_MAIN = {
     children: [
         SITE_MAP_SPEECH,
         SITE_MAP_MUSIC,
+        SITE_MAP_VIDEO,
         SITE_MAP_WEBSOCKET_LIST,
         SITE_MAP_WEB_GPU_LIST,
         SITE_MAP_MEDIA,

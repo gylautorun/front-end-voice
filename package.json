@@ -12,6 +12,7 @@
   "dependencies": {
     "@ant-design/icons": "^6.1.0",
     "@microsoft/fetch-event-source": "^2.0.1",
+    "@tensorflow-models/body-pix": "^2.2.1",
     "@tensorflow-models/coco-ssd": "^2.2.3",
     "@tensorflow-models/mobilenet": "^2.1.1",
     "@tensorflow-models/posenet": "^2.2.2",

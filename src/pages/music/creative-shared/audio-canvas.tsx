@@ -1,4 +1,4 @@
-import {RefObject, useEffect, useRef} from 'react';
+import {PointerEventHandler, RefObject, useEffect, useRef} from 'react';
 import {AudioAnalysisFrame, AudioFrameReader} from '../shared/audio-frame';
 import style from './style.module.scss';
 
@@ -26,24 +26,32 @@ interface AudioCanvasProps {
     label: string;
     /** 页面提供的逐帧绘制方法。 */
     onDraw: (frame: CreativeCanvasFrame) => void;
+    /** 页面需要导出图片等原生能力时，接收当前 Canvas；卸载时接收 null。 */
+    onCanvasReady?: (canvas: HTMLCanvasElement | null) => void;
+    /** 需要画布点击或触控交互的页面可以传入该事件。 */
+    onPointerDown?: PointerEventHandler<HTMLCanvasElement>;
 }
 
 /**
  * 管理高 DPI 缓冲区、ResizeObserver、音频帧读取和动画释放。
  * 页面只实现 onDraw，不需要重复建立 requestAnimationFrame 生命周期。
  */
-export const AudioCanvas = ({analyserRef, label, onDraw}: AudioCanvasProps) => {
+export const AudioCanvas = ({analyserRef, label, onCanvasReady, onDraw, onPointerDown}: AudioCanvasProps) => {
     // 保存真实 Canvas 元素，effect 挂载后创建 2D 上下文。
     const canvasRef = useRef<HTMLCanvasElement>(null);
     // 每次 React 渲染同步最新回调，不因为页面状态变化重启动画循环。
     const drawRef = useRef(onDraw);
     drawRef.current = onDraw;
+    // 同步最新的就绪回调，同时避免父组件渲染导致动画 effect 重启。
+    const canvasReadyRef = useRef(onCanvasReady);
+    canvasReadyRef.current = onCanvasReady;
 
     useEffect(() => {
         // 第一步：取得 Canvas 和 2D 上下文；不可用时不启动循环。
         const canvas = canvasRef.current;
         const context = canvas?.getContext('2d');
         if (!canvas || !context) return;
+        canvasReadyRef.current?.(canvas);
 
         // 第二步：创建独立音频读取器并初始化逻辑尺寸。
         const reader = new AudioFrameReader();
@@ -91,8 +99,16 @@ export const AudioCanvas = ({analyserRef, label, onDraw}: AudioCanvasProps) => {
         return () => {
             cancelAnimationFrame(animationFrameId);
             resizeObserver.disconnect();
+            canvasReadyRef.current?.(null);
         };
     }, [analyserRef]);
 
-    return <canvas ref={canvasRef} className={style.canvas} aria-label={label} />;
+    return (
+        <canvas
+            ref={canvasRef}
+            className={style.canvas}
+            aria-label={label}
+            onPointerDown={onPointerDown}
+        />
+    );
 };

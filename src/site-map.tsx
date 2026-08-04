@@ -119,6 +119,14 @@ export const SITE_MAP_MUSIC_AMBIENT_LAB = {
     path: '/music/ambient-lab',
 };
 
+/** 时间环雕塑、节拍星座、故障磁带和画面导出。 */
+export const SITE_MAP_MUSIC_SOUND_SCULPTURE = {
+    entry: ENTRY_MAIN,
+    key: 'music-sound-sculpture',
+    label: () => '声音雕塑',
+    path: '/music/sound-sculpture',
+};
+
 export const SITE_MAP_MUSIC = {
     entry: ENTRY_MAIN,
     key: 'music',
@@ -136,6 +144,7 @@ export const SITE_MAP_MUSIC = {
         SITE_MAP_MUSIC_LYRIC_MOTION,
         SITE_MAP_MUSIC_INTERACTIVE_STAGE,
         SITE_MAP_MUSIC_AMBIENT_LAB,
+        SITE_MAP_MUSIC_SOUND_SCULPTURE,
     ],
 };
 

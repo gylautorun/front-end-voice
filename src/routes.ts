@@ -13,6 +13,7 @@ import {
     SITE_MAP_MUSIC_LYRIC_MOTION,
     SITE_MAP_MUSIC_INTERACTIVE_STAGE,
     SITE_MAP_MUSIC_AMBIENT_LAB,
+    SITE_MAP_MUSIC_SOUND_SCULPTURE,
     SITE_MAP_MEDIA_DEVICE,
     SITE_MAP_AUDIO_CONTEXT,
     SITE_MAP_IMG_VIDEO_PREVIEW,
@@ -117,6 +118,11 @@ export const routes = [
         key: SITE_MAP_MUSIC_AMBIENT_LAB.key,
         path: SITE_MAP_MUSIC_AMBIENT_LAB.path,
         component: React.lazy(() => import('./pages/music/ambient-lab/index')),
+    },
+    {
+        key: SITE_MAP_MUSIC_SOUND_SCULPTURE.key,
+        path: SITE_MAP_MUSIC_SOUND_SCULPTURE.path,
+        component: React.lazy(() => import('./pages/music/sound-sculpture/index')),
     },
     
     {

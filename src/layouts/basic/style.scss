@@ -38,5 +38,26 @@
         overflow-x: hidden;
         width: 225px;
     }
-    
+}
+
+/* 手机视口无法同时容纳固定 225px 侧栏和实际工具页面，窄屏时让内容使用完整宽度。 */
+@media (max-width: 700px) {
+    .app-page .sidebar {
+        display: none;
+    }
+
+    /* Ant Layout 的 flex 子项默认按内容最小宽度展开，显式归零才能让 Canvas 工具真正收缩。 */
+    .app-page,
+    .app-page .main,
+    .app-page .main > .ant-layout,
+    .app-page .main-content,
+    .app-page .app-content {
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    .app-page .main-content {
+        overflow-x: hidden;
+    }
 }

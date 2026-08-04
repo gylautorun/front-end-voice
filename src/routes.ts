@@ -3,6 +3,10 @@ import {
     SITE_MAP_SPEECH_RECOGNITION,
     SITE_MAP_SPEECH_SYNTHESIS,
     SITE_MAP_MUSIC_AUDIO_VISUALIZER,
+    SITE_MAP_MUSIC_SPECTRUM,
+    SITE_MAP_MUSIC_PARTICLE_3D,
+    SITE_MAP_MUSIC_SHADER_LAB,
+    SITE_MAP_MUSIC_IMMERSIVE_PLAYER,
     SITE_MAP_MEDIA_DEVICE,
     SITE_MAP_AUDIO_CONTEXT,
     SITE_MAP_IMG_VIDEO_PREVIEW,
@@ -57,6 +61,26 @@ export const routes = [
         key: SITE_MAP_MUSIC_AUDIO_VISUALIZER.key,
         path: SITE_MAP_MUSIC_AUDIO_VISUALIZER.path,
         component: React.lazy(() => import('./pages/music/audio-visualizer/index')),
+    },
+    {
+        key: SITE_MAP_MUSIC_SPECTRUM.key,
+        path: SITE_MAP_MUSIC_SPECTRUM.path,
+        component: React.lazy(() => import('./pages/music/spectrum/index')),
+    },
+    {
+        key: SITE_MAP_MUSIC_PARTICLE_3D.key,
+        path: SITE_MAP_MUSIC_PARTICLE_3D.path,
+        component: React.lazy(() => import('./pages/music/particle-3d/index')),
+    },
+    {
+        key: SITE_MAP_MUSIC_SHADER_LAB.key,
+        path: SITE_MAP_MUSIC_SHADER_LAB.path,
+        component: React.lazy(() => import('./pages/music/shader-lab/index')),
+    },
+    {
+        key: SITE_MAP_MUSIC_IMMERSIVE_PLAYER.key,
+        path: SITE_MAP_MUSIC_IMMERSIVE_PLAYER.path,
+        component: React.lazy(() => import('./pages/music/immersive-player/index')),
     },
     
     {

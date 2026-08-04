@@ -39,6 +39,38 @@ export const SITE_MAP_MUSIC_AUDIO_VISUALIZER = {
     path: '/music/audio-visualizer',
 };
 
+/** Canvas 2D 经典频谱、环形黑胶与示波器。 */
+export const SITE_MAP_MUSIC_SPECTRUM = {
+    entry: ENTRY_MAIN,
+    key: 'music-spectrum',
+    label: () => '经典频谱',
+    path: '/music/spectrum',
+};
+
+/** Three.js 粒子、地形、变形球和星空隧道。 */
+export const SITE_MAP_MUSIC_PARTICLE_3D = {
+    entry: ENTRY_MAIN,
+    key: 'music-particle-3d',
+    label: () => '粒子与 3D',
+    path: '/music/particle-3d',
+};
+
+/** GLSL 万花筒和流体色场。 */
+export const SITE_MAP_MUSIC_SHADER_LAB = {
+    entry: ENTRY_MAIN,
+    key: 'music-shader-lab',
+    label: () => 'Shader 图形',
+    path: '/music/shader-lab',
+};
+
+/** 黑胶、氛围背景与卡拉 OK 歌词播放器。 */
+export const SITE_MAP_MUSIC_IMMERSIVE_PLAYER = {
+    entry: ENTRY_MAIN,
+    key: 'music-immersive-player',
+    label: () => '沉浸播放器',
+    path: '/music/immersive-player',
+};
+
 export const SITE_MAP_MUSIC = {
     entry: ENTRY_MAIN,
     key: 'music',
@@ -46,6 +78,10 @@ export const SITE_MAP_MUSIC = {
     path: '/music',
     children: [
         SITE_MAP_MUSIC_AUDIO_VISUALIZER,
+        SITE_MAP_MUSIC_SPECTRUM,
+        SITE_MAP_MUSIC_PARTICLE_3D,
+        SITE_MAP_MUSIC_SHADER_LAB,
+        SITE_MAP_MUSIC_IMMERSIVE_PLAYER,
     ],
 };
 

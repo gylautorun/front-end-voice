@@ -15,3 +15,10 @@ body {
   }
 }
 
+/* 手机端解除桌面工作台的 1280px 根节点限制，让各页面媒体查询获得真实可用宽度。 */
+@media (max-width: 700px) {
+  body #root {
+    width: 100%;
+    min-width: 320px;
+  }
+}

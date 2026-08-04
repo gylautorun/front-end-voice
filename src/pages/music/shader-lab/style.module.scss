@@ -1,0 +1,71 @@
+.shader-stage {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #030506;
+
+    canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
+}
+
+.frequency-scale {
+    position: absolute;
+    right: 18px;
+    bottom: 18px;
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    height: 76px;
+    padding: 10px 12px;
+    background: rgba(3, 6, 7, 0.58);
+    backdrop-filter: blur(8px);
+    pointer-events: none;
+
+    span {
+        display: grid;
+        grid-template-rows: 46px auto;
+        justify-items: center;
+        gap: 4px;
+        height: 100%;
+    }
+
+    i {
+        align-self: end;
+        grid-row: 1;
+        width: 5px;
+        min-height: 3px;
+        height: var(--sub, 5%);
+        background: #b088ff;
+        box-shadow: 0 0 12px #b088ff;
+    }
+
+    span:nth-child(2) i { height: var(--bass, 5%); background: #35b7ff; box-shadow: 0 0 12px #35b7ff; }
+    span:nth-child(3) i { height: var(--mid, 5%); background: #57e389; box-shadow: 0 0 12px #57e389; }
+    span:nth-child(4) i { height: var(--high, 5%); background: #ffd166; box-shadow: 0 0 12px #ffd166; }
+    span:nth-child(5) i { height: var(--air, 5%); background: #ef476f; box-shadow: 0 0 12px #ef476f; }
+
+    b {
+        grid-row: 2;
+        color: rgba(231, 240, 236, 0.65);
+        font-size: 8px;
+        font-weight: 500;
+        white-space: nowrap;
+    }
+}
+
+.glsl-badge {
+    position: absolute;
+    top: 18px;
+    left: 18px;
+    padding: 5px 7px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.72);
+    background: rgba(3, 6, 7, 0.45);
+    font-size: 9px;
+    font-weight: 700;
+    pointer-events: none;
+}

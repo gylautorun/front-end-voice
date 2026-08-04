@@ -71,6 +71,54 @@ export const SITE_MAP_MUSIC_IMMERSIVE_PLAYER = {
     path: '/music/immersive-player',
 };
 
+/** MIDI、音符雨、Piano Roll 和实时和弦轮。 */
+export const SITE_MAP_MUSIC_NOTE_STUDIO = {
+    entry: ENTRY_MAIN,
+    key: 'music-note-studio',
+    label: () => '音符与和声',
+    path: '/music/note-studio',
+};
+
+/** 频谱瀑布、歌曲结构时间轴和音乐数据报告。 */
+export const SITE_MAP_MUSIC_ANALYSIS_STUDIO = {
+    entry: ENTRY_MAIN,
+    key: 'music-analysis-studio',
+    label: () => '音乐数据分析',
+    path: '/music/analysis-studio',
+};
+
+/** 本地音频特征映射、生成式封面和浏览器旋律生成。 */
+export const SITE_MAP_MUSIC_GENERATIVE_STUDIO = {
+    entry: ENTRY_MAIN,
+    key: 'music-generative-studio',
+    label: () => '生成式视觉',
+    path: '/music/generative-studio',
+};
+
+/** 动力字体、景深歌词和麦克风音准曲线。 */
+export const SITE_MAP_MUSIC_LYRIC_MOTION = {
+    entry: ENTRY_MAIN,
+    key: 'music-lyric-motion',
+    label: () => '歌词与动态排版',
+    path: '/music/lyric-motion',
+};
+
+/** 节奏挑战、Web MIDI、WebHID、WebSerial 和 WebXR。 */
+export const SITE_MAP_MUSIC_INTERACTIVE_STAGE = {
+    entry: ENTRY_MAIN,
+    key: 'music-interactive-stage',
+    label: () => '互动与设备',
+    path: '/music/interactive-stage',
+};
+
+/** 音频山景、音乐驾驶和浏览器环境声合成。 */
+export const SITE_MAP_MUSIC_AMBIENT_LAB = {
+    entry: ENTRY_MAIN,
+    key: 'music-ambient-lab',
+    label: () => '氛围实验',
+    path: '/music/ambient-lab',
+};
+
 export const SITE_MAP_MUSIC = {
     entry: ENTRY_MAIN,
     key: 'music',
@@ -82,6 +130,12 @@ export const SITE_MAP_MUSIC = {
         SITE_MAP_MUSIC_PARTICLE_3D,
         SITE_MAP_MUSIC_SHADER_LAB,
         SITE_MAP_MUSIC_IMMERSIVE_PLAYER,
+        SITE_MAP_MUSIC_NOTE_STUDIO,
+        SITE_MAP_MUSIC_ANALYSIS_STUDIO,
+        SITE_MAP_MUSIC_GENERATIVE_STUDIO,
+        SITE_MAP_MUSIC_LYRIC_MOTION,
+        SITE_MAP_MUSIC_INTERACTIVE_STAGE,
+        SITE_MAP_MUSIC_AMBIENT_LAB,
     ],
 };
 

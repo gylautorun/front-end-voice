@@ -7,6 +7,12 @@ import {
     SITE_MAP_MUSIC_PARTICLE_3D,
     SITE_MAP_MUSIC_SHADER_LAB,
     SITE_MAP_MUSIC_IMMERSIVE_PLAYER,
+    SITE_MAP_MUSIC_NOTE_STUDIO,
+    SITE_MAP_MUSIC_ANALYSIS_STUDIO,
+    SITE_MAP_MUSIC_GENERATIVE_STUDIO,
+    SITE_MAP_MUSIC_LYRIC_MOTION,
+    SITE_MAP_MUSIC_INTERACTIVE_STAGE,
+    SITE_MAP_MUSIC_AMBIENT_LAB,
     SITE_MAP_MEDIA_DEVICE,
     SITE_MAP_AUDIO_CONTEXT,
     SITE_MAP_IMG_VIDEO_PREVIEW,
@@ -81,6 +87,36 @@ export const routes = [
         key: SITE_MAP_MUSIC_IMMERSIVE_PLAYER.key,
         path: SITE_MAP_MUSIC_IMMERSIVE_PLAYER.path,
         component: React.lazy(() => import('./pages/music/immersive-player/index')),
+    },
+    {
+        key: SITE_MAP_MUSIC_NOTE_STUDIO.key,
+        path: SITE_MAP_MUSIC_NOTE_STUDIO.path,
+        component: React.lazy(() => import('./pages/music/note-studio/index')),
+    },
+    {
+        key: SITE_MAP_MUSIC_ANALYSIS_STUDIO.key,
+        path: SITE_MAP_MUSIC_ANALYSIS_STUDIO.path,
+        component: React.lazy(() => import('./pages/music/analysis-studio/index')),
+    },
+    {
+        key: SITE_MAP_MUSIC_GENERATIVE_STUDIO.key,
+        path: SITE_MAP_MUSIC_GENERATIVE_STUDIO.path,
+        component: React.lazy(() => import('./pages/music/generative-studio/index')),
+    },
+    {
+        key: SITE_MAP_MUSIC_LYRIC_MOTION.key,
+        path: SITE_MAP_MUSIC_LYRIC_MOTION.path,
+        component: React.lazy(() => import('./pages/music/lyric-motion/index')),
+    },
+    {
+        key: SITE_MAP_MUSIC_INTERACTIVE_STAGE.key,
+        path: SITE_MAP_MUSIC_INTERACTIVE_STAGE.path,
+        component: React.lazy(() => import('./pages/music/interactive-stage/index')),
+    },
+    {
+        key: SITE_MAP_MUSIC_AMBIENT_LAB.key,
+        path: SITE_MAP_MUSIC_AMBIENT_LAB.path,
+        component: React.lazy(() => import('./pages/music/ambient-lab/index')),
     },
     
     {

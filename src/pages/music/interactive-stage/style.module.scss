@@ -1,0 +1,56 @@
+.rhythm-hud {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    display: flex;
+    gap: 1px;
+    background: #26342f;
+}
+
+.rhythm-hud span {
+    min-width: 90px;
+    padding: 10px 12px;
+    color: #71877d;
+    background: rgba(7, 12, 12, 0.9);
+    font-size: 9px;
+}
+
+.rhythm-hud b { display: block; margin-top: 3px; color: #f3f8f5; font-size: 19px; }
+
+.device-workbench {
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    padding: clamp(52px, 7vw, 92px);
+    background: #080c0d;
+}
+
+.device-workbench header span { color: #58dfad; font-size: 10px; font-weight: 700; }
+.device-workbench header h2 { margin: 6px 0 30px; color: #f2f7f4; font-size: 28px; }
+
+.device-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1px;
+    background: #28332f;
+}
+
+.device-grid > div {
+    display: flex;
+    align-items: flex-start;
+    flex-direction: column;
+    min-height: 210px;
+    gap: 14px;
+    padding: 24px;
+    background: #111718;
+}
+
+.device-grid > div > :global(.anticon) { color: #5ee0ae; font-size: 28px; }
+.device-grid strong { color: #eff5f2; font-size: 16px; }
+.device-grid :global(.ant-btn) { width: 100%; margin-top: auto; }
+
+@media (max-width: 800px) {
+    .device-workbench { padding: 64px 16px 24px; }
+    .device-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .device-grid > div { min-height: 155px; padding: 16px; }
+}

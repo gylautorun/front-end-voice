@@ -1,5 +1,5 @@
 import {ReactNode, useCallback, useEffect, useMemo, useRef} from 'react';
-import demoTrackUrl from '../assets/audio/张申骋 - 何惜一战.mp3';
+import demoTrackUrl from '../assets/audio/掌缘生灭.mp3';
 import {useAudioAnalyser} from '../audio-visualizer/use-audio-analyser';
 import {MusicAudioContext} from './music-audio-context';
 
@@ -32,7 +32,7 @@ export const MusicAudioProvider = ({children}: MusicAudioProviderProps) => {
                 if (!isMounted || hasSelectedFileRef.current) return;
                 return loadFile(new File(
                     [blob],
-                    '张申骋 - 何惜一战.mp3',
+                    '掌缘生灭.mp3',
                     {type: blob.type || 'audio/mpeg'},
                 ));
             })

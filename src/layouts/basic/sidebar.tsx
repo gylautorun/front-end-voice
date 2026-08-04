@@ -63,7 +63,7 @@ export const Sidebar = withRouter((props: SideMenuProps) => {
             items={menuList}
             mode="inline"
             theme={'light'}
-            style={{ height: '100%', borderInlineEnd: 0, width: 225 }}
+            style={{ height: '100%', overflowY: 'auto', borderInlineEnd: 0, width: 225 }}
             inlineCollapsed={collapsed}
             selectedKeys={selectedIds}
             openKeys={expandedKeys}

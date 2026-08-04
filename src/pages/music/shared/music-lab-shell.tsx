@@ -23,7 +23,7 @@ interface MusicLabShellProps {
     children: ReactNode;
 }
 
-/** 四个音乐路由共享的标题、音轨、上传和播放控制外壳。 */
+/** 多个音乐实验路由共享的标题、音轨、上传和播放控制外壳。 */
 export const MusicLabShell = ({children, eyebrow, modeControl, title}: MusicLabShellProps) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const {
